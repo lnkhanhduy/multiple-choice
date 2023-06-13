@@ -1,0 +1,348 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-3 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Thêm môn học
+        </button>
+    </div>
+
+    <div class="col-sm-3 offset-sm-6 mb-2">
+        <form id="formSearch">
+            <div class="input-group">
+                <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
+                <div class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav aria-label="..." class="mt-2">
+    <ul class="pagination pagination-sm" id="pagination">
+    </ul>
+</nav>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    STT
+                </th>
+                <th>
+                    Tên môn học
+                </th>
+                <th>
+                    Thẻ meta
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListSubject">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalSubject">
+    <div class="modal-dialog">
+        <div class="modal-content ">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <input hidden id="subjectId" value="" />
+                    <div class="form-group">
+                        <label class="control-label mt-2">Tên môn học</label>
+                        <input type="text" class="form-control" id="subjectName" placeholder="Tên môn học" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Thẻ meta</label>
+                        <input type="text" class="form-control" id="subjectMeta" placeholder="Thẻ meta" />
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="button" class="btn btn-success" id="btnSubmit">Thêm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts{
+    <script>
+        var keyword = '';
+        var page = 1;
+
+        $(document).ready(function () {
+            LoadListSubject(keyword, page);
+        });
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListSubject(keyword, page);
+        })
+
+        //Load List Subject
+        function LoadListSubject() {
+            //use ajax to load list subject
+            $.ajax({
+                url: "/admin/subject/GetListSubject",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListSubject').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.id}>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-4">${item.subjectName}</td>`;
+                            tr += `<td class="col-sm-4">${item.meta}</td>`;
+                            tr += '<td class="col-sm-3 text-end">';
+                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListSubject').append(tr);
+
+                        })
+
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Get Detail
+        $(document).on('click', "button[name='view']", function () {
+            let subjectId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/subject/GetDetail',
+                type: "get",
+                data: {
+                    id: subjectId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        //set title
+                        $('#modalTitle').text("Chi tiết môn học");
+
+                        //set value input
+                        $('#subjectName').val(data.data.subjectName);
+                        $('#subjectMeta').val(data.data.meta);
+
+                        //readonly input
+                        $('#subjectName').prop('readonly', true);
+                        $('#subjectMeta').prop('readonly', true);
+
+                        //hidden button add
+                        $('#btnSubmit').hide();
+
+                        //show modal
+                        $('#modalSubject').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Add Subject
+        $('#btnAdd').click(function () {
+            $('#modalTitle').text("Thêm môn học");
+
+            $('#subjectId').val('');
+            $('#subjectName').val('');
+            $('#subjectMeta').val('');
+
+            $('#subjectName').prop('readonly', false);
+            $('#subjectMeta').prop('readonly', false);
+
+            //show button add
+            $('#btnSubmit').text('Thêm');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalSubject').modal('show');
+        });
+
+        //Update Subject
+        $(document).on('click', "button[name='update']", function () {
+            let subjectId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/subject/GetDetail',
+                type: "get",
+                data: {
+                    id: subjectId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        //set title
+                        $('#modalTitle').text("Cập nhật thông tin môn học");
+
+                        //set value input
+                        $('#subjectId').val(subjectId);
+                        $('#subjectName').val(data.data.subjectName);
+                        $('#subjectMeta').val(data.data.meta);
+
+                        $('#subjectName').prop('readonly', false);
+                        $('#subjectMeta').prop('readonly', false);
+
+                        //show button add
+                        $('#btnSubmit').text('Lưu');
+                        $('#btnSubmit').show();
+
+                        //show modal
+                        $('#modalSubject').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+
+        });
+
+        //Delete Subject
+        $(document).on('click', "button[name='delete']", function () {
+            let subjectId = $(this).closest('tr').attr('id');
+
+            if (confirm("Bạn có chắc muốn xóa môn học này?")) {
+                //Use ajax delete subject
+                $.ajax({
+                    url: '/admin/subject/DeleteSubject',
+                    type: "post",
+                    data: {
+                        id: subjectId
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+                            LoadListSubject(keyword, page);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+
+        });
+
+        //Submit Modal
+        $('#btnSubmit').click(function () {
+            let subjectId = $('#subjectId').val();
+            let subjectName = $('#subjectName').val().trim();
+            let subjectMeta = $('#subjectMeta').val().trim();
+
+            if (subjectName.length == 0 || subjectMeta.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu!");
+                return;
+            }
+
+            if (subjectId.length == 0) {
+                //Use ajax add subject
+                $.ajax({
+                    url: '/admin/subject/AddSubject',
+                    type: 'post',
+                    data: {
+                        subjectName,
+                        subjectMeta
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#subjectName').val('');
+                            $('#subjectMeta').val('');
+                            LoadListSubject(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+            else {
+                //Use ajax update subject
+                $.ajax({
+                    url: '/admin/subject/UpdateSubject',
+                    type: 'post',
+                    data: {
+                        id: subjectId,
+                        subjectName,
+                        subjectMeta
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#modalSubject').modal('hide');
+                            LoadListSubject(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+
+        //Convert subject name to meta
+        $('#subjectName').keyup(function () {
+            let convertedString = $(this).val().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); //remove diacritics
+            convertedString = convertedString.replace(/\s+/g, "-").toLowerCase(); //Add a hyphen between two words
+            $('#subjectMeta').val(convertedString)
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+
+            if (keyword.length == 0) {
+                return;
+            }
+
+            page = 1;
+            LoadListSubject(keyword, page)
+        })
+
+        //Reload list subject input null
+        $('#search').keyup(function () {
+            if ($("#search").val().length < 1) {
+                keyword = '';
+                page = 1;
+                LoadListSubject(keyword, page)
+            }
+        })
+    </script>
+}
+

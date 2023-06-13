@@ -1,0 +1,406 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-3 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Thêm quá tình giảng dạy
+        </button>
+    </div>
+
+    <div class="col-sm-3 offset-sm-6 mb-2">
+        <form id="formSearch">
+            <div class="input-group">
+                <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
+                <div class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav aria-label="..." class="mt-2">
+    <ul class="pagination pagination-sm" id="pagination">
+    </ul>
+</nav>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    Tên giáo viên
+                </th>
+                <th>
+                    Môn học
+                </th>
+                <th>
+                    Lớp
+                </th>
+                <th>
+                    Từ ngày
+                </th>
+                <th>
+                    Đến ngày
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListTeaching">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalTeaching">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <input hidden id="teachingId" value="" />
+                    <div class="form-group">
+                        <label class="control-label">Giáo viên</label>
+                        <select class="form-select" id="teachingSelectTeacher">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Môn học</label>
+                        <select class="form-select" id="teachingSelectSubject">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Lớp</label>
+                        <select class="form-select" id="teachingSelectClass">
+                        </select>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="form-group col-sm-6">
+                            <label class="control-label">Từ ngày</label>
+                            <input type="date" class="form-control" id="startingDate" />
+                        </div>
+                        <div class="form-group col-sm-6">
+                            <label class="control-label">Đến ngày</label>
+                            <input type="date" class="form-control" id="endingDate" />
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="button" class="btn btn-success" id="btnSubmit">Thêm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        var keyword = '';
+        var page = 1;
+
+        $(document).ready(function () {
+            LoadListTeacher();
+            LoadListSubject();
+            LoadListClass();
+            LoadListTeaching(keyword, page);
+        });
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListTeaching(keyword, page);
+        })
+
+        //Load List Teaching
+        function LoadListTeaching(keyword, page) {
+            //use ajax to load list teaching
+            $.ajax({
+                url: "/admin/teaching/GetListTeaching",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListTeaching').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.id}>`;
+                            tr += `<td class="col-sm-2 teacher" data-id-teacher=${item.teacherId}>${item.teacherName}</td>`;
+                            tr += `<td class="col-sm-2 subject" data-id-subject=${item.subjectId}>${item.subjectName}</td>`;
+                            tr += `<td class="col-sm-2 class" data-id-class=${item.classId}>${item.className}</td>`;
+                            tr += '<td class="col-sm-2 startingDate">' + new Date(item.startingDate).getDate()
+                                + "/" + Number(new Date(item.startingDate).getMonth() + 1)
+                                + "/" + new Date(item.startingDate).getFullYear() + "</td>";
+                            tr += '<td class="col-sm-2 endingDate">' + new Date(item.endingDate).getDate()
+                                + "/" + Number(new Date(item.endingDate).getMonth() + 1)
+                                + "/" + new Date(item.endingDate).getFullYear() + "</td>";
+                            tr += '<td class="col-sm-2 text-end">';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListTeaching').append(tr);
+
+                        })
+
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Load List Teacher
+        function LoadListTeacher() {
+            //use ajax to load list teacher
+            $.ajax({
+                url: "/admin/teacher/GetAllTeacher",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#teachingSelectTeacher').empty();
+                        $('#teachingSelectTeacher').append("<option value='-1' selected>Chọn giáo viên</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.teacherName}</option>`;
+                            $('#teachingSelectTeacher').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Load List Class
+        function LoadListClass() {
+            //use ajax to load list class
+            $.ajax({
+                url: "/admin/class/GetAllClass",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#teachingSelectClass').empty();
+                        $('#teachingSelectClass').append("<option value='-1' selected>Chọn lớp giảng dạy</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.className}</option>`;
+                            $('#teachingSelectClass').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Load List Subject
+        function LoadListSubject() {
+            //use ajax to load list subject
+            $.ajax({
+                url: "/admin/subject/GetAllSubject",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#teachingSelectSubject').empty();
+                        $('#teachingSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.subjectName}</option>`;
+                            $('#teachingSelectSubject').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Add Teaching
+        $('#btnAdd').click(function () {
+            $('#modalTitle').text("Thêm quá trình giảng dạy");
+
+            $('#teachingId').val('');
+            $('#teachingSelectTeacher').val(-1);
+            $('#teachingSelectSubject').val(-1);
+            $('#teachingSelectClass').val(-1);
+            $('#startingDate').val('');
+            $('#endingDate').val('');
+
+            //show button add
+            $('#btnSubmit').text('Thêm');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalTeaching').modal('show');
+        });
+
+        //Format date
+        function FormatDate(date) {
+            var dateParts = date.split("/");
+            var formattedDate = dateParts[2] + "-" + dateParts[1].padStart(2, '0') + "-" + dateParts[0].padStart(2, '0');
+            return formattedDate;
+        }
+
+        //Update Teaching
+        $(document).on('click', "button[name='update']", function () {
+            let teachingId = $(this).closest('tr').attr('id');
+            let teacherId = $(`tr#${teachingId} td.teacher`).data('id-teacher');
+            let subjectId = $(`tr#${teachingId} td.subject`).data('id-subject');
+            let classId = $(`tr#${teachingId} td.class`).data('id-class');
+            let startingDate = $(`tr#${teachingId} td.startingDate`).text();
+            let endingDate = $(`tr#${teachingId} td.endingDate`).text();
+
+            //Set title
+            $('#modalTitle').text("Cập nhật thông tin quá trình giảng dạy");
+
+            //set value input
+            $('#teachingId').val(teachingId);
+            $('#teachingSelectTeacher').val(teacherId);
+            $('#teachingSelectSubject').val(subjectId);
+            $('#teachingSelectClass').val(classId);
+            $('#startingDate').val(FormatDate(startingDate));
+            $('#endingDate').val(FormatDate(endingDate));
+
+            //show button add
+            $('#btnSubmit').text('Lưu');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalTeaching').modal('show');
+        });
+
+        //Delete Teaching
+        $(document).on('click', "button[name='delete']", function () {
+            let teachingId = $(this).closest('tr').attr('id');
+
+            if (confirm("Bạn có chắc muốn xóa quá trình giảng dạy này?")) {
+                //Use ajax delete teaching
+                $.ajax({
+                    url: '/admin/teaching/DeleteTeaching',
+                    type: "post",
+                    data: {
+                        id: teachingId
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+                            LoadListTeaching(keyword, page);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        });
+
+        //Submit Modal
+        $('#btnSubmit').click(function () {
+            let teachingId = $('#teachingId').val();
+            let teacherId = $('#teachingSelectTeacher').val();
+            let subjectId = $('#teachingSelectSubject').val();
+            let classId = $('#teachingSelectClass').val();
+            let startingDate = $('#startingDate').val();
+            let endingDate = $('#endingDate').val();
+
+            if (teacherId == -1 || subjectId == -1 || classId == -1 || startingDate.length == 0 || endingDate.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu!");
+                return;
+            }
+            else if (new Date(startingDate) >= new Date(endingDate)) {
+                alert("Thời gian gảng dạy không hợp lệ!");
+                return;
+            }
+
+
+            if (teachingId.length == 0) {
+                //Use ajax add teaching
+                $.ajax({
+                    url: '/admin/teaching/AddTeaching',
+                    type: 'post',
+                    data: {
+                        teacherId,
+                        subjectId,
+                        classId,
+                        startingDate,
+                        endingDate
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#startingDate').val('');
+                            $('#endingDate').val('');
+                            $('#teachingSelectTeacher').val(-1);
+                            $('#teachingSelectSubject').val(-1);
+                            $('#teachingSelectClass').val(-1);
+                            LoadListTeaching(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+            else {
+                //Use ajax update teaching
+                $.ajax({
+                    url: '/admin/teaching/UpdateTeaching',
+                    type: 'post',
+                    data: {
+                        id: teachingId,
+                        teacherId,
+                        subjectId,
+                        classId,
+                        startingDate,
+                        endingDate
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#modalTeaching').modal('hide');
+                            LoadListTeaching(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+
+            if (keyword.length == 0) {
+                alert("Vui lòng nhập từ khóa tìm kiếm!");
+                return;
+            }
+            page = 1;
+            LoadListTeaching(keyword, page)
+        })
+
+        //Reload list teaching input null
+        $('#search').keyup(function () {
+            if ($("#search").val().length < 1) {
+                keyword = '';
+                page = 1;
+                LoadListTeaching(keyword, page);
+            }
+        })
+    </script>
+}
+

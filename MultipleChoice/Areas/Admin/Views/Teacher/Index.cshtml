@@ -1,0 +1,428 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-3 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Thêm giáo viên
+        </button>
+    </div>
+
+    <div class="col-sm-3 offset-sm-6 mb-2">
+        <form id="formSearch">
+            <div class="input-group">
+                <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
+                <div class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav aria-label="..." class="mt-2">
+    <ul class="pagination pagination-sm" id="pagination">
+    </ul>
+</nav>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    Mã giáo viên
+                </th>
+                <th>
+                    Họ tên
+                </th>
+                <th>
+                    Số điện thoại
+                </th>
+                <th>
+                    Email
+                </th>
+                <th>
+                    Chức vụ
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListTeacher">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalTeacher">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <input hidden id="id" value="" />
+                    <div class="form-group">
+                        <label class="control-label">Mã giáo viên</label>
+                        <input type="text" class="form-control" id="teacherId" placeholder="Mã giáo viên" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Mật khẩu</label>
+                        <input type="password" class="form-control" id="password" placeholder="Mật khẩu" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Họ và tên</label>
+                        <input type="text" class="form-control" id="teacherName" placeholder="Họ và tên" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Số điện thoại</label>
+                        <input type="text" class="form-control" id="phone" placeholder="Số điện thoại" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Email</label>
+                        <input type="email" class="form-control" id="email" placeholder="Email" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Địa chỉ</label>
+                        <input type="text" class="form-control" id="address" placeholder="Địa chỉ" />
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="isLeader">
+                        <label class="form-check-label">
+                            Trưởng BM
+                        </label>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="button" class="btn btn-success" id="btnSubmit">Thêm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        var keyword = '';
+        var page = 1;
+
+        $(document).ready(function () {
+            LoadListTeacher(keyword, page);
+        });
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListTeacher(keyword, page);
+        })
+
+        //Load List Teacher
+        function LoadListTeacher(keyword, page) {
+            //use ajax to load list teacher
+            $.ajax({
+                url: "/admin/teacher/GetListTeacher",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListTeacher').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.id}>`;
+                            tr += `<td class="col-sm-2">${item.teacherId}</td>`;
+                            tr += `<td class="col-sm-3">${item.teacherName}</td>`;
+                            tr += `<td class="col-sm-2">${item.phone}</td>`;
+                            tr += `<td class="col-sm-2">${item.email}</td>`;
+                            tr += `<td class="col-sm-1">${item.isLeader == 0 ? 'Giáo viên' : 'Trưởng BM'}</td>`;
+                            tr += '<td class="col-sm-2 text-end">';
+                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListTeacher').append(tr);
+                        })
+
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Get Detail
+        $(document).on('click', "button[name='view']", function () {
+            let id = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/teacher/GetDetail',
+                type: "get",
+                data: {
+                    id
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        //set title
+                        $('#modalTitle').text("Chi tiết giáo viên");
+
+                        //set value input
+                        $('#teacherId').val(data.data.idTeacher);
+                        $('#password').val(data.data.password);
+                        $('#teacherName').val(data.data.teacherName);
+                        $('#phone').val(data.data.phone);
+                        $('#email').val(data.data.email);
+                        $('#address').val(data.data.address);
+                        $('#isLeader').prop('checked', data.data.isLeader == 1 ? true : false);
+
+                        //readonly input
+                        $('#teacherId').prop('readonly', true);
+                        $('#password').prop('readonly', true);
+                        $('#teacherName').prop('readonly', true);
+                        $('#phone').prop('readonly', true);
+                        $('#email').prop('readonly', true);
+                        $('#address').prop('readonly', true);
+                        $("#isLeader").attr('disabled', true);
+
+                        //hidden button add
+                        $('#btnSubmit').hide();
+
+                        //show modal
+                        $('#modalTeacher').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Add Teacher
+        $('#btnAdd').click(function () {
+            $('#modalTitle').text("Thêm giáo viên");
+
+            $('#id').val('');
+            $('#teacherId').val('');
+            $('#password').val('');
+            $('#teacherName').val('');
+            $('#phone').val('');
+            $('#email').val('');
+            $('#address').val('');
+            $('#isLeader').prop('checked', false);
+
+            $('#teacherId').prop('readonly', false);
+            $('#password').prop('readonly', false);
+            $('#teacherName').prop('readonly', false);
+            $('#phone').prop('readonly', false);
+            $('#email').prop('readonly', false);
+            $('#address').prop('readonly', false);
+            $("#isLeader").attr('disabled', false);
+
+            //show button add
+            $('#btnSubmit').text('Thêm');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalTeacher').modal('show');
+        });
+
+        //Update Teacher
+        $(document).on('click', "button[name='update']", function () {
+            let id = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/teacher/GetDetail',
+                type: "get",
+                data: {
+                    id
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        //set title
+                        $('#modalTitle').text("Cập nhật thông tin giáo viên");
+
+                        //set value input
+                        $('#id').val(id);
+                        $('#teacherId').val(data.data.idTeacher);
+                        $('#password').val(data.data.password);
+                        $('#teacherName').val(data.data.teacherName);
+                        $('#phone').val(data.data.phone);
+                        $('#email').val(data.data.email);
+                        $('#address').val(data.data.address);
+                        $('#isLeader').prop('checked', data.data.isLeader == 1 ? true : false);
+
+                        //readonly input
+                        $('#teacherId').prop('readonly', false);
+                        $('#password').prop('readonly', false);
+                        $('#teacherName').prop('readonly', false);
+                        $('#phone').prop('readonly', false);
+                        $('#email').prop('readonly', false);
+                        $('#address').prop('readonly', false);
+                        $("#isLeader").attr('disabled', false);
+
+                        //show button add
+                        $('#btnSubmit').text('Lưu');
+                        $('#btnSubmit').show();
+
+
+                        //show modal
+                        $('#modalTeacher').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Delete Teacher
+        $(document).on('click', "button[name='delete']", function () {
+            let id = $(this).closest('tr').attr('id');
+
+            if (confirm("Bạn có chắc muốn xóa giáo viên này?")) {
+                //Use ajax delete teacher
+                $.ajax({
+                    url: '/admin/teacher/DeleteTeacher',
+                    type: "post",
+                    data: {
+                        id
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+                            LoadListTeacher(keyword, page);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+
+        });
+
+        //Submit Modal
+        $('#btnSubmit').click(function () {
+            let id = $('#id').val();
+            let teacherId = $('#teacherId').val();
+            let password = $('#password').val();
+            let teacherName = $('#teacherName').val();
+            let phone = $('#phone').val();
+            let email = $('#email').val();
+            let address = $('#address').val();
+            let isLeader = $('#isLeader').is(':checked');
+
+            if (teacherId.length == 0 || password.length == 0 || teacherName.length == 0 || phone.length == 0 || email.length == 0 || address.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu!");
+                return;
+            } else if (password.length < 6) {
+                alert("Mật khẩu ít nhất 6 ký tự!");
+                return;
+            } else if (phone.length != 10) {
+                alert("Số điện thoại phải 10 chữ số!");
+                return;
+            } else if (!email.includes("@@")) {
+                alert("Email không đúng định dạng!");
+                return;
+            }
+
+            if (id.length == 0) {
+                //Use ajax add teacher
+                $.ajax({
+                    url: '/admin/teacher/AddTeacher',
+                    type: 'post',
+                    data: {
+                        teacherId,
+                        password,
+                        teacherName,
+                        phone,
+                        email,
+                        address,
+                        isLeader: isLeader == true ? 1 : 0
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#teacherId').val('');
+                            $('#password').val('');
+                            $('#teacherName').val('');
+                            $('#phone').val('');
+                            $('#email').val('');
+                            $('#address').val('');
+                            $('#isLeader').prop('checked', false);
+
+                            LoadListTeacher(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+            else {
+                //Use ajax update teacher
+                $.ajax({
+                    url: '/admin/teacher/UpdateTeacher',
+                    type: 'post',
+                    data: {
+                        id,
+                        teacherId,
+                        password,
+                        teacherName,
+                        phone,
+                        email,
+                        address,
+                        isLeader: isLeader == true ? 1 : 0
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#modalTeacher').modal('hide');
+                            LoadListTeacher(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+
+            if (keyword.length == 0) {
+                return;
+            }
+            page = 1;
+            LoadListTeacher(keyword, page)
+        })
+
+        //Reload list teacher input null
+        $('#search').keyup(function () {
+            if ($("#search").val().length < 1) {
+                keyword = '';
+                page = 1;
+                LoadListTeacher(keyword, page);
+            }
+        })
+    </script>
+
+}

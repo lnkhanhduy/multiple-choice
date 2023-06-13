@@ -1,0 +1,430 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-3 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Thêm học sinh
+        </button>
+    </div>
+
+    <div class="col-sm-3 offset-sm-6 mb-2">
+        <form id="formSearch">
+            <div class="input-group">
+                <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
+                <div class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav aria-label="..." class="mt-2">
+    <ul class="pagination pagination-sm" id="pagination">
+    </ul>
+</nav>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    Mã học sinh
+                </th>
+                <th>
+                    Họ tên
+                </th>
+                <th>
+                    Ngày sinh
+                </th>
+                <th>
+                    Địa chỉ
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListStudent">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalStudent">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <input hidden id="id" value="" />
+                    <div class="form-group">
+                        <label class="control-label">Mã học sinh</label>
+                        <input type="text" class="form-control" id="studentId" placeholder="Mã học sinh" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Mật khẩu</label>
+                        <input type="password" class="form-control" id="password" placeholder="Mật khẩu" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Họ và tên</label>
+                        <input type="text" class="form-control" id="studentName" placeholder="Họ và tên" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Ngày sinh</label>
+                        <input type="date" class="form-control" id="birthday" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Số điện thoại</label>
+                        <input type="number" class="form-control" id="phone" placeholder="Số điện thoại" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Email</label>
+                        <input type="email" class="form-control" id="email" placeholder="Email" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Địa chỉ</label>
+                        <input type="text" class="form-control" id="address" placeholder="Địa chỉ" />
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="button" class="btn btn-success" id="btnSubmit">Thêm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        var keyword = '';
+        var page = 1;
+
+        $(document).ready(function () {
+            LoadListStudent(keyword, page);
+        });
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListStudent(keyword, page);
+        })
+
+        //Load List Student
+        function LoadListStudent(keyword, page) {
+            //use ajax to load list student
+            $.ajax({
+                url: "/admin/student/GetListStudent",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListStudent').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.studentId}>`;
+                            tr += `<td class="col-sm-2">${item.studentId}</td>`;
+                            tr += `<td class="col-sm-3">${item.studentName}</td>`;
+                            tr += '<td class="col-sm-2 birthday">' + new Date(item.birthday).getDate()
+                                + "/" + Number(new Date(item.birthday).getMonth() + 1)
+                                + "/" + new Date(item.birthday).getFullYear() + "</td>";
+                            tr += `<td class="col-sm-3">${item.address}</td>`;
+                            tr += '<td class="col-sm-2 text-end">';
+                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListStudent').append(tr);
+                        })
+
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Get Detail
+        $(document).on('click', "button[name='view']", function () {
+            let id = $(this).closest('tr').attr('id');
+            let birthday = $(`tr#${id} td.birthday`).text();
+
+            $.ajax({
+                url: '/admin/student/GetDetail',
+                type: "get",
+                data: {
+                    id
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        //set title
+                        $('#modalTitle').text("Chi tiết học sinh");
+
+                        //set value input
+                        $('#studentId').val(data.data.idStudent);
+                        $('#password').val(data.data.password);
+                        $('#studentName').val(data.data.studentName);
+                        $('#phone').val(data.data.phone);
+                        $('#email').val(data.data.email);
+                        $('#address').val(data.data.address);
+                        $('#birthday').val(FormatDate(birthday));
+
+                        //readonly input
+                        $('#studentId').prop('readonly', true);
+                        $('#password').prop('readonly', true);
+                        $('#studentName').prop('readonly', true);
+                        $('#phone').prop('readonly', true);
+                        $('#email').prop('readonly', true);
+                        $('#address').prop('readonly', true);
+                        $('#birthday').prop('readonly', true);
+
+                        //hidden button add
+                        $('#btnSubmit').hide();
+
+                        //show modal
+                        $('#modalStudent').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Add Student
+        $('#btnAdd').click(function () {
+            $('#modalTitle').text("Thêm học sinh");
+
+            $('#id').val('');
+            $('#studentId').val('');
+            $('#password').val('');
+            $('#studentName').val('');
+            $('#phone').val('');
+            $('#email').val('');
+            $('#address').val('');
+            $('#birthday').val('');
+
+            $('#studentId').prop('readonly', false);
+            $('#password').prop('readonly', false);
+            $('#studentName').prop('readonly', false);
+            $('#phone').prop('readonly', false);
+            $('#email').prop('readonly', false);
+            $('#address').prop('readonly', false);
+            $('#birthday').prop('readonly', false);
+
+            //show button add
+            $('#btnSubmit').text('Thêm');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalStudent').modal('show');
+        });
+
+        //Format date
+        function FormatDate(date) {
+            let dateParts = date.split("/");
+            let formattedDate = dateParts[2] + "-" + dateParts[1].padStart(2, '0') + "-" + dateParts[0].padStart(2, '0');
+            return formattedDate;
+        }
+
+        //Update Student
+        $(document).on('click', "button[name='update']", function () {
+            let id = $(this).closest('tr').attr('id');
+            let birthday = $(`tr#${id} td.birthday`).text();
+
+            $.ajax({
+                url: '/admin/student/GetDetail',
+                type: "get",
+                data: {
+                    id
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        //set title
+                        $('#modalTitle').text("Cập nhật thông tin học sinh");
+
+                        //set value input
+                        $('#id').val(id);
+                        $('#studentId').val(data.data.idStudent);
+                        $('#password').val(data.data.password);
+                        $('#studentName').val(data.data.studentName);
+                        $('#phone').val(data.data.phone);
+                        $('#email').val(data.data.email);
+                        $('#address').val(data.data.address);
+                        $('#birthday').val(FormatDate(birthday));
+
+                        //readonly input
+                        $('#studentId').prop('readonly', true);
+                        $('#password').prop('readonly', false);
+                        $('#studentName').prop('readonly', false);
+                        $('#phone').prop('readonly', false);
+                        $('#email').prop('readonly', false);
+                        $('#address').prop('readonly', false);
+                        $('#birthday').prop('readonly', false);
+
+                        //show button add
+                        $('#btnSubmit').text('Lưu');
+                        $('#btnSubmit').show();
+
+                        //show modal
+                        $('#modalStudent').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Delete Student
+        $(document).on('click', "button[name='delete']", function () {
+            let id = $(this).closest('tr').attr('id');
+
+            if (confirm("Bạn có chắc muốn xóa học sinh này?")) {
+                //Use ajax delete student
+                $.ajax({
+                    url: '/admin/student/DeleteStudent',
+                    type: "post",
+                    data: {
+                        id
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+                            LoadListStudent(keyword, page);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+
+        });
+
+        //Submit Modal
+        $('#btnSubmit').click(function () {
+            let id = $('#id').val();
+            let studentId = $('#studentId').val();
+            let password = $('#password').val();
+            let studentName = $('#studentName').val();
+            let phone = $('#phone').val();
+            let email = $('#email').val();
+            let address = $('#address').val();
+            let birthday = $('#birthday').val();
+
+            if (studentId.length == 0 || password.length == 0 || studentName.length == 0 || phone.length == 0 || email.length == 0 || address.length == 0 || birthday.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu!");
+                return;
+            } else if (password.length < 6) {
+                alert("Mật khẩu ít nhất 6 ký tự!");
+                return;
+            } else if (phone.length != 10) {
+                alert("Số điện thoại phải 10 chữ số!");
+                return;
+            } else if (!email.includes("@@")) {
+                alert("Email không đúng định dạng!");
+                return;
+            }
+
+            if (id.length == 0) {
+                //Use ajax add student
+                $.ajax({
+                    url: '/admin/student/AddStudent',
+                    type: 'post',
+                    data: {
+                        studentId,
+                        password,
+                        studentName,
+                        phone,
+                        email,
+                        address,
+                        birthday
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#studentId').val('');
+                            $('#password').val('');
+                            $('#studentName').val('');
+                            $('#phone').val('');
+                            $('#email').val('');
+                            $('#address').val('');
+                            $('#birthday').val('');
+
+                            LoadListStudent(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+            else {
+                //Use ajax update student
+                $.ajax({
+                    url: '/admin/student/UpdateStudent',
+                    type: 'post',
+                    data: {
+                        studentId,
+                        password,
+                        studentName,
+                        phone,
+                        email,
+                        address,
+                        birthday
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#modalStudent').modal('hide');
+                            LoadListStudent(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+
+            if (keyword.length == 0) {
+                return;
+            }
+            page = 1;
+            LoadListStudent(keyword, page)
+        })
+
+        //Reload list student input null
+        $('#search').keyup(function () {
+            if ($("#search").val().length < 1) {
+                keyword = '';
+                page = 1;
+                LoadListStudent(keyword, page);
+            }
+        })
+    </script>
+}

@@ -1,0 +1,137 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MultipleChoice - Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MultipleChoice.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" style="margin-left:100px" id="navbarScroll">
+                    <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
+                        <li class="nav-item">
+                            <a class="nav-link" aria-current="page" href="/admin/adminhome/index">Trang chủ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">View</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
+                                Danh mục
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="/admin/class">
+                                        Lớp
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/admin/subject">
+                                        Môn học
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/admin/teacher">
+                                        Giáo viên
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/admin/student">
+                                        Học sinh
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/admin/teaching">
+                                        Giảng dạy
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/admin/enroll">
+                                        Nhập học
+                                    </a>
+                                </li>
+
+
+                            </ul>
+                            @*                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                            @foreach (var item in ViewBag.Grades)
+                            {
+                            <li class="dropend">
+                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            @item.GradeName
+                            </a>
+                            <ul class="dropdown-menu">
+                            @foreach (var itemSubject in ViewBag.Subjects)
+                            {
+                            if (itemSubject.IdGrade == item.Id)
+                            {
+                            <li>
+                            <a class="dropdown-item" href="#">
+                            @itemSubject.SubjectName
+                            </a>
+                            </li>
+                            }
+
+                            }
+
+
+                            </ul>
+                            </li>
+                            }
+                            </ul>*@
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
+                                Chức năng
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="/admin/enroll">
+                                        Nhập học
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Link</a>
+                        </li>
+                    </ul>
+                    <form class="d-flex">
+                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                        <button class="btn btn-outline-success" type="submit">Search</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container" style="margin-top:62px">
+        <main role="main" class="pb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    Quản trị hệ thống
+                </div>
+                <div class="card-body">
+                    @RenderBody()
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
