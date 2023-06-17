@@ -72,6 +72,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
         }
 
         //Get All Teacher
+        [HttpGet]
         public JsonResult GetAllTeacher()
         {
             try
@@ -155,6 +156,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
                 }
 
                 var _teacher = new Teacher();
+
                 _teacher.IdTeacher = teacherId;
                 _teacher.Password = password;
                 _teacher.TeacherName = teacherName;

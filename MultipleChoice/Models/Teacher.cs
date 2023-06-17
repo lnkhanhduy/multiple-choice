@@ -7,6 +7,7 @@ namespace MultipleChoice.Models
     {
         public Teacher()
         {
+            Exams = new HashSet<Exam>();
             Teachings = new HashSet<Teaching>();
         }
 
@@ -20,6 +21,7 @@ namespace MultipleChoice.Models
         public byte? IsLeader { get; set; }
         public byte? IsDelete { get; set; }
 
+        public virtual ICollection<Exam> Exams { get; set; }
         public virtual ICollection<Teaching> Teachings { get; set; }
     }
 }

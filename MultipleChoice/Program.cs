@@ -24,7 +24,7 @@ builder.Services.AddControllersWithViews()
         options.AreaPageViewLocationFormats.Add("/Areas/{2}/Views/Shared/{0}.cshtml");
         options.AreaPageViewLocationFormats.Add("/Views/Shared/{0}.cshtml");
     })
-    .AddApplicationPart(typeof(AdminHomeController).Assembly)
+    .AddApplicationPart(typeof(TeacherController).Assembly)
     .AddControllersAsServices();
 
 
@@ -55,11 +55,15 @@ app.UseEndpoints(endpoints =>
     endpoints.MapRazorPages();
     endpoints.MapControllerRoute(
         name: "adminArea",
-        pattern: "{area:exists}/{controller:exists}/{action=Index}/{id?}"
+        pattern: "{area=admin}/{controller:exists}/{action=Index}/{id?}"
+    );
+    endpoints.MapControllerRoute(
+        name: "teacherArea",
+        pattern: "{area=teacherarea}/{controller:exists}/{action=Index}/{id?}"
     );
     endpoints.MapControllerRoute(
         name: "default",
-        pattern: "{area=admin}/{controller=Enroll}/{action=Index}/{id?}"
+        pattern: "{area=teacherarea}/{controller=Question}/{action=Index}/{id?}"
     );
 });
 

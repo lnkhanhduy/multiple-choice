@@ -146,298 +146,299 @@
             </div>
         </div>
     </div>
+</div>
 
 
 
-    @section Scripts{
-        <script>
-            let keyword = '';
-            let page = 1;
-            let keywordTable = '';
-            let pageTable = 1;
+@section Scripts{
+    <script>
+        let keyword = '';
+        let page = 1;
+        let keywordTable = '';
+        let pageTable = 1;
 
-            $(document).ready(function () {
-                LoadListGrade();
-                LoadYear();
-                LoadListEnroll(keyword, page);
-            });
+        $(document).ready(function () {
+            LoadListGrade();
+            LoadYear();
+            LoadListEnroll(keyword, page);
+        });
 
-            //Click page of pagination
-            $('#pagination').on('click', 'li', function (e) {
-                e.preventDefault();
-                page = $(this).text();
-                LoadListEnroll(keyword, page);
-            })
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListEnroll(keyword, page);
+        })
 
-            //Click page of pagination on table
-            $('#paginationTable').on('click', 'li', function (e) {
-                e.preventDefault();
-                pageTable = $(this).text();
-                LoadListNotEnroll(keywordTable, pageTable);
-            })
+        //Click page of pagination on table
+        $('#paginationTable').on('click', 'li', function (e) {
+            e.preventDefault();
+            pageTable = $(this).text();
+            LoadListNotEnroll(keywordTable, pageTable);
+        })
 
-            //Load Year
-            function LoadYear() {
-                let year = new Date().getFullYear();
-                $('#enrollSelectYear').empty();
-                for (let i = year; i > year - 10; i--) {
-                    let option = `<option value=${i}>${i}</option>`;
-                    $('#enrollSelectYear').append(option);
-                }
-            };
-
-            //Load List Class By Id Grade
-            $('#enrollSelectGrade').on('change', function () {
-                LoadListClassByGrade(this.value);
-            });
-
-            //Load List Grade
-            function LoadListGrade() {
-                //use ajax to load list grade
-                $.ajax({
-                    url: "/admin/grade/GetAllGrade",
-                    type: "get",
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#enrollSelectGrade').empty();
-                            $('#enrollSelectGrade').append("<option value='-1' selected>Chọn khối</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.gradeName}</option>`;
-                                $('#enrollSelectGrade').append(option);
-                            })
-                        }
-                    }
-                })
-            };
-
-            //Load List Class By Id Grade
-            function LoadListClassByGrade(id) {
-                if (id == -1) {
-                    $('#enrollSelectClass').empty();
-                    $('#enrollSelectClass').append("<option value='-1' selected>Chưa chọn khối</option>");
-                    return;
-                }
-                //use ajax to load list class
-                $.ajax({
-                    url: "/admin/class/GetListClassByGrade",
-                    type: "get",
-                    data: {
-                        id
-                    },
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#enrollSelectClass').empty();
-                            $('#enrollSelectClass').append("<option value='-1' selected>Chọn lớp</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.className}</option>`;
-                                $('#enrollSelectClass').append(option);
-                            })
-                        }
-                    }
-                })
-            };
-
-            //Load List Student Enroll
-            function LoadListEnroll(keyword, page) {
-                //use ajax to load list enroll
-                let year = $('#enrollSelectYear').val();
-                $.ajax({
-                    url: "/admin/enroll/GetListEnroll",
-                    type: "get",
-                    data: {
-                        year,
-                        keyword,
-                        page
-                    },
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#tBodyListEnroll').empty();
-                            $.each(data.data, function (index, item) {
-                                let tr = `<tr id=${item.studentId}>`;
-                                tr += `<td class="col-sm-1">${index + 1}</td>`;
-                                tr += `<td class="col-sm-3">${item.studentName}</td>`;
-                                tr += '<td class="col-sm-2">' + new Date(item.birthday).getDate()
-                                    + "/" + Number(new Date(item.birthday).getMonth() + 1)
-                                    + "/" + new Date(item.birthday).getFullYear() + "</td>";
-                                tr += `<td class="col-sm-2">${item.phone}</td>`;
-                                tr += `<td class="col-sm-2">${item.email}</td>`;
-                                tr += `<td class="col-sm-2">${item.address}</td>`;
-                                tr += "</tr>";
-
-                                $('#tBodyListEnroll').append(tr);
-                            })
-
-                            if (data.pageSize > 1) {
-                                $('#pagination').empty();
-                                for (var i = 1; i <= data.pageSize; i++) {
-                                    let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
-                                    $('#pagination').append(li);
-                                }
-                                let li = $(`#pagination li#${page}`);
-                                $(li).addClass('active');
-                            }
-                            else {
-                                $('#pagination').empty();
-                            }
-                        }
-                    }
-                })
-            };
-
-            //Load List Student On Change Value Year
-            $('#enrollSelectYear').on('change', function () {
-                LoadListEnroll(keyword, page)
-            })
-
-            //Load List Student Not Enroll
-            function LoadListNotEnroll(keyword, page) {
-                //use ajax to load list student not enroll
-                $.ajax({
-                    url: "/admin/enroll/GetStudentNotEnrollByClass",
-                    type: "get",
-                    data: {
-                        keyword,
-                        page
-                    },
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#tBodyListNotEnroll').empty();
-                            $.each(data.data, function (index, item) {
-                                let tr = `<tr id=${item.studentId}>`;
-                                tr += `<td class="col-sm-1">${index + 1}</td>`;
-                                tr += `<td class="col-sm-2">${item.studentId}</td>`;
-                                tr += `<td class="col-sm-3">${item.studentName}</td>`;
-                                tr += '<td class="col-sm-1">' + new Date(item.birthday).getDate()
-                                    + "/" + Number(new Date(item.birthday).getMonth() + 1)
-                                    + "/" + new Date(item.birthday).getFullYear() + "</td>";
-                                tr += `<td class="col-sm-2">${item.address}</td>`;
-                                tr += `<td class="col-sm-1">${item.phone}</td>`;
-                                tr += `<td class="col-sm-2">${item.email}</td>`;
-                                tr += `<td class="col-sm-1"><input type="checkbox"/></td>`;
-                                tr += "</tr>";
-
-                                $('#tBodyListNotEnroll').append(tr);
-                            })
-
-                            if (data.pageSize > 1) {
-                                $('#paginationTable').empty();
-                                for (var i = 1; i <= data.pageSize; i++) {
-                                    let li = `<li class="page-item" id=${'pagetable-' + i}><a class="page-link" href="#">${i}</a></li>`;
-                                    $('#paginationTable').append(li);
-                                }
-
-                                let li = $(`#paginationTable li#${'pagetable-' + pageTable} `);
-                                $(li).addClass('active');
-                            }
-                            else {
-                                $('#paginationTable').empty();
-                            }
-                        }
-                    }
-                })
+        //Load Year
+        function LoadYear() {
+            let year = new Date().getFullYear();
+            $('#enrollSelectYear').empty();
+            for (let i = year; i > year - 10; i--) {
+                let option = `<option value=${i}>${i}</option>`;
+                $('#enrollSelectYear').append(option);
             }
+        };
 
-            //Show modal enroll
-            $('#btnAdd').click(function () {
-                let classId = $('#enrollSelectClass').val();
-                if (classId == -1) {
-                    alert("Vui lòng chọn lớp!");
-                    return;
+        //Load List Class By Id Grade
+        $('#enrollSelectGrade').on('change', function () {
+            LoadListClassByGrade(this.value);
+        });
+
+        //Load List Student On Change Value Year
+        $('#enrollSelectYear').on('change', function () {
+            LoadListEnroll(keyword, page)
+        })
+
+        //Load List Grade
+        function LoadListGrade() {
+            //use ajax to load list grade
+            $.ajax({
+                url: "/admin/grade/GetAllGrade",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#enrollSelectGrade').empty();
+                        $('#enrollSelectGrade').append("<option value='-1' selected>Chọn khối</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.gradeName}</option>`;
+                            $('#enrollSelectGrade').append(option);
+                        })
+                    }
                 }
+            })
+        };
 
-                $('#modalTitle').text("Danh sách học sinh chưa nhập học");
-                pageTable = 1;
-                keywordTable = '';
-                $('#searchTable').val('');
-                LoadListNotEnroll();
+        //Load List Class By Id Grade
+        function LoadListClassByGrade(id) {
+            if (id == -1) {
+                $('#enrollSelectClass').empty();
+                $('#enrollSelectClass').append("<option value='-1' selected>Chưa chọn khối</option>");
+                return;
+            }
+            //use ajax to load list class
+            $.ajax({
+                url: "/admin/class/GetListClassByGrade",
+                type: "get",
+                data: {
+                    id
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#enrollSelectClass').empty();
+                        $('#enrollSelectClass').append("<option value='-1' selected>Chọn lớp</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.className}</option>`;
+                            $('#enrollSelectClass').append(option);
+                        })
+                    }
+                }
+            })
+        };
 
-                //show button add
-                $('#btnSubmit').text('Xác nhận');
-                $('#btnSubmit').show();
+        //Load List Student Enroll
+        function LoadListEnroll(keyword, page) {
+            //use ajax to load list enroll
+            let year = $('#enrollSelectYear').val();
+            $.ajax({
+                url: "/admin/enroll/GetListEnroll",
+                type: "get",
+                data: {
+                    year,
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListEnroll').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.studentId}>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-3">${item.studentName}</td>`;
+                            tr += '<td class="col-sm-2">' + new Date(item.birthday).getDate()
+                                + "/" + Number(new Date(item.birthday).getMonth() + 1)
+                                + "/" + new Date(item.birthday).getFullYear() + "</td>";
+                            tr += `<td class="col-sm-2">${item.phone}</td>`;
+                            tr += `<td class="col-sm-2">${item.email}</td>`;
+                            tr += `<td class="col-sm-2">${item.address}</td>`;
+                            tr += "</tr>";
 
-                //show modal
-                $('#modalEnroll').modal('show');
-            });
+                            $('#tBodyListEnroll').append(tr);
+                        })
 
-            //Enroll
-            function Enroll(studentId) {
-                let classId = $('#enrollSelectClass').val();
-
-                //Use ajax enroll
-                $.ajax({
-                    url: '/admin/enroll/Enroll',
-                    type: 'post',
-                    data: {
-                        studentId,
-                        classId
-                    },
-                    success: function (data) {
-                        if (data.code == 200) {
-                            alert(data.message);
-
-                            LoadListEnroll(keyword, page);
-                            $('#modalEnroll').modal('hide');
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
                         }
                         else {
-                            alert(data.message);
+                            $('#pagination').empty();
                         }
                     }
-                })
+                }
+            })
+        };
+
+        //Load List Student Not Enroll
+        function LoadListNotEnroll(keyword, page) {
+            //use ajax to load list student not enroll
+            $.ajax({
+                url: "/admin/enroll/GetStudentNotEnrollByClass",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListNotEnroll').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.studentId}>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-2">${item.studentId}</td>`;
+                            tr += `<td class="col-sm-3">${item.studentName}</td>`;
+                            tr += '<td class="col-sm-1">' + new Date(item.birthday).getDate()
+                                + "/" + Number(new Date(item.birthday).getMonth() + 1)
+                                + "/" + new Date(item.birthday).getFullYear() + "</td>";
+                            tr += `<td class="col-sm-2">${item.address}</td>`;
+                            tr += `<td class="col-sm-1">${item.phone}</td>`;
+                            tr += `<td class="col-sm-2">${item.email}</td>`;
+                            tr += `<td class="col-sm-1"><input type="checkbox"/></td>`;
+                            tr += "</tr>";
+
+                            $('#tBodyListNotEnroll').append(tr);
+                        })
+
+                        if (data.pageSize > 1) {
+                            $('#paginationTable').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${'pagetable-' + i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#paginationTable').append(li);
+                            }
+
+                            let li = $(`#paginationTable li#${'pagetable-' + pageTable} `);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#paginationTable').empty();
+                        }
+                    }
+                }
+            })
+        }
+
+        //Show modal enroll
+        $('#btnAdd').click(function () {
+            let classId = $('#enrollSelectClass').val();
+            if (classId == -1) {
+                alert("Vui lòng chọn lớp!");
+                return;
             }
 
-            //Submit Modal
-            $('#btnSubmit').click(function () {
-                $('#tBodyListNotEnroll > tr').each(function (index, item) {
-                    if ($(this).find('input').is(':checked')) {
-                        let id = $(this).attr('id');
-                        Enroll(id);
+            $('#modalTitle').text("Danh sách học sinh chưa nhập học");
+            pageTable = 1;
+            keywordTable = '';
+            $('#searchTable').val('');
+            LoadListNotEnroll();
+
+            //show button add
+            $('#btnSubmit').text('Xác nhận');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalEnroll').modal('show');
+        });
+
+        //Enroll
+        function Enroll(studentId) {
+            let classId = $('#enrollSelectClass').val();
+
+            //Use ajax enroll
+            $.ajax({
+                url: '/admin/enroll/Enroll',
+                type: 'post',
+                data: {
+                    studentId,
+                    classId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        alert(data.message);
+
+                        LoadListEnroll(keyword, page);
+                        $('#modalEnroll').modal('hide');
                     }
-                })
+                    else {
+                        alert(data.message);
+                    }
+                }
+            })
+        }
+
+        //Submit Modal
+        $('#btnSubmit').click(function () {
+            $('#tBodyListNotEnroll > tr').each(function (index, item) {
+                if ($(this).find('input').is(':checked')) {
+                    let id = $(this).attr('id');
+                    Enroll(id);
+                }
+            })
+            return;
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+
+            if (keyword.length == 0) {
                 return;
-            })
+            }
 
-            //Search
-            $('#formSearch').submit(function (e) {
-                e.preventDefault();
-                keyword = $('#search').val().trim();
+            page = 1;
+            LoadListEnroll(keyword, page)
+        })
 
-                if (keyword.length == 0) {
-                    return;
-                }
-
+        //Reload list not enroll input null
+        $('#search').keyup(function () {
+            if ($("#search").val().length < 1) {
+                keyword = '';
                 page = 1;
-                LoadListEnroll(keyword, page)
-            })
+                LoadListEnroll(keyword, page);
+            }
+        })
 
-            //Reload list not enroll input null
-            $('#search').keyup(function () {
-                if ($("#search").val().length < 1) {
-                    keyword = '';
-                    page = 1;
-                    LoadListEnroll(keyword, page);
-                }
-            })
+        //Search Table
+        $('#formSearchTable').submit(function (e) {
+            e.preventDefault();
+            keywordTable = $('#searchTable').val().trim();
 
-            //Search Table
-            $('#formSearchTable').submit(function (e) {
-                e.preventDefault();
-                keywordTable = $('#searchTable').val().trim();
+            if (keywordTable.length == 0) {
+                return;
+            }
 
-                if (keywordTable.length == 0) {
-                    return;
-                }
+            pageTable = 1;
+            LoadListNotEnroll(keywordTable, pageTable)
+        })
 
+        //Reload list not enroll table input null
+        $('#searchTable').keyup(function () {
+            if ($("#searchTable").val().length < 1) {
+                keywordTable = '';
                 pageTable = 1;
                 LoadListNotEnroll(keywordTable, pageTable)
-            })
-
-            //Reload list not enroll table input null
-            $('#searchTable').keyup(function () {
-                if ($("#searchTable").val().length < 1) {
-                    keywordTable = '';
-                    pageTable = 1;
-                    LoadListNotEnroll(keywordTable, pageTable)
-                }
-            })
-        </script>
-    }
+            }
+        })
+    </script>
+}

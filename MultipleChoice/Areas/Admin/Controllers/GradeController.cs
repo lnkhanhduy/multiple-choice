@@ -63,6 +63,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
         }
 
         //Get All Grade
+        [HttpGet]
         public JsonResult GetAllGrade()
         {
             try

@@ -21,6 +21,8 @@ namespace MultipleChoice.Models
         public virtual DbSet<Chapter> Chapters { get; set; } = null!;
         public virtual DbSet<Class> Classes { get; set; } = null!;
         public virtual DbSet<Exam> Exams { get; set; } = null!;
+        public virtual DbSet<ExamDuration> ExamDurations { get; set; } = null!;
+        public virtual DbSet<ExamsQuestion> ExamsQuestions { get; set; } = null!;
         public virtual DbSet<Grade> Grades { get; set; } = null!;
         public virtual DbSet<Learning> Learnings { get; set; } = null!;
         public virtual DbSet<Lesson> Lessons { get; set; } = null!;
@@ -102,7 +104,46 @@ namespace MultipleChoice.Models
             {
                 entity.Property(e => e.ExamDate).HasColumnType("datetime");
 
+                entity.Property(e => e.IsApprove).HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.IsDelete).HasDefaultValueSql("((0))");
+
+                entity.HasOne(d => d.AuthorNavigation)
+                    .WithMany(p => p.Exams)
+                    .HasForeignKey(d => d.Author)
+                    .HasConstraintName("FK_Exams_Teachers");
+
+                entity.HasOne(d => d.IdDurationNavigation)
+                    .WithMany(p => p.Exams)
+                    .HasForeignKey(d => d.IdDuration)
+                    .HasConstraintName("FK_Exams_ExamDurations");
+
+                entity.HasOne(d => d.IdSubjectNavigation)
+                    .WithMany(p => p.Exams)
+                    .HasForeignKey(d => d.IdSubject)
+                    .HasConstraintName("FK_Exams_Subjects");
+            });
+
+            modelBuilder.Entity<ExamDuration>(entity =>
+            {
+                entity.Property(e => e.DurationName).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<ExamsQuestion>(entity =>
+            {
+                entity.ToTable("Exams_Questions");
+
+                entity.Property(e => e.IsDelete).HasDefaultValueSql("((0))");
+
+                entity.HasOne(d => d.IdExamNavigation)
+                    .WithMany(p => p.ExamsQuestions)
+                    .HasForeignKey(d => d.IdExam)
+                    .HasConstraintName("FK_Exams_Questions_Exams");
+
+                entity.HasOne(d => d.IdQuestionNavigation)
+                    .WithMany(p => p.ExamsQuestions)
+                    .HasForeignKey(d => d.IdQuestion)
+                    .HasConstraintName("FK_Exams_Questions_Questions");
             });
 
             modelBuilder.Entity<Grade>(entity =>
@@ -181,6 +222,8 @@ namespace MultipleChoice.Models
 
                 entity.Property(e => e.CreationDate).HasColumnType("datetime");
 
+                entity.Property(e => e.DeletionDate).HasColumnType("datetime");
+
                 entity.Property(e => e.EditingDate).HasColumnType("datetime");
 
                 entity.Property(e => e.IsApprove).HasDefaultValueSql("((0))");
@@ -209,11 +252,14 @@ namespace MultipleChoice.Models
 
             modelBuilder.Entity<Result>(entity =>
             {
-                entity.HasKey(e => new { e.IdStudent, e.IdExam, e.IdQuestion });
+                entity.HasKey(e => new { e.IdStudent, e.IdExamQuestion })
+                    .HasName("PK_Results_1");
 
                 entity.Property(e => e.IdStudent)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+
+                entity.Property(e => e.IdExamQuestion).HasColumnName("IdExam_Question");
 
                 entity.Property(e => e.Answer)
                     .HasMaxLength(1)
@@ -221,17 +267,11 @@ namespace MultipleChoice.Models
 
                 entity.Property(e => e.IsDelete).HasDefaultValueSql("((0))");
 
-                entity.HasOne(d => d.IdExamNavigation)
+                entity.HasOne(d => d.IdExamQuestionNavigation)
                     .WithMany(p => p.Results)
-                    .HasForeignKey(d => d.IdExam)
+                    .HasForeignKey(d => d.IdExamQuestion)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Results_Exams");
-
-                entity.HasOne(d => d.IdQuestionNavigation)
-                    .WithMany(p => p.Results)
-                    .HasForeignKey(d => d.IdQuestion)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Results_Questions1");
+                    .HasConstraintName("FK_Results_Exams_Questions");
 
                 entity.HasOne(d => d.IdStudentNavigation)
                     .WithMany(p => p.Results)
@@ -292,6 +332,11 @@ namespace MultipleChoice.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.SubjectName).HasMaxLength(50);
+
+                entity.HasOne(d => d.IdGradeNavigation)
+                    .WithMany(p => p.Subjects)
+                    .HasForeignKey(d => d.IdGrade)
+                    .HasConstraintName("FK_Subjects_Grades");
             });
 
             modelBuilder.Entity<Teacher>(entity =>

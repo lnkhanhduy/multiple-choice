@@ -71,6 +71,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
         }
 
         //Get All Student
+        [HttpGet]
         public JsonResult GetAllStudent()
         {
             try

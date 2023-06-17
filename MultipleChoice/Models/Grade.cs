@@ -8,6 +8,7 @@ namespace MultipleChoice.Models
         public Grade()
         {
             Classes = new HashSet<Class>();
+            Subjects = new HashSet<Subject>();
         }
 
         public int Id { get; set; }
@@ -16,5 +17,6 @@ namespace MultipleChoice.Models
         public byte? IsDelete { get; set; }
 
         public virtual ICollection<Class> Classes { get; set; }
+        public virtual ICollection<Subject> Subjects { get; set; }
     }
 }

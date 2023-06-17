@@ -1,0 +1,687 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Areas/TeacherArea/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<div class="row">
+    <div class="form-group col-sm-4">
+        <select class="form-select" id="examSelectSubject">
+            <option value="-1">Chọn môn</option>
+        </select>
+    </div>
+
+    <div class="col-sm-2 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Tạo đề thi
+        </button>
+    </div>
+
+    <div class="col-sm-2 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Phê duyệt đề thi
+        </button>
+    </div>
+
+    <div class="col-sm-3 offset-sm-1 mb-2">
+        <form id="formSearch">
+            <div class="input-group">
+                <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
+                <div class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav aria-label="..." class="mt-2">
+    <ul class="pagination pagination-sm" id="pagination">
+    </ul>
+</nav>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    STT
+                </th>
+
+                <th>
+                    Loại đề
+                </th>
+                <th>
+                    Thời gian
+                </th>
+                <th>
+                    Ngày thi
+                </th>
+                <th>
+                    Người tạo
+                </th>
+                <th class="text-center">
+                    Đã duyệt
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListExam">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalExam">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="form-group col-sm-6">
+                            <label class="control-label">Ngày thi</label>
+                            <input type="date" id="examDate" class="form-control" />
+                        </div>
+                        <div class="form-group col-sm-6">
+                            <label class="control-label">Loại đề thi</label>
+                            <select class="form-select" id="examSelectDuration">
+                                <option value="-1">Chọn loại đề thi</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button type="button" class="btn btn-success" id="btnSubmit">Tạo</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalDetailExam">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalDetailTitle">Chi tiết đề thi</h5>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="form-group col-sm-4">
+                            <label class="control-label">Chương</label>
+                            <select class="form-select" id="examDetailSelectChapter">
+                                <option value="-1">Chọn chương</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label class="control-label">Bài</label>
+                            <select class="form-select" id="examDetailSelectLesson">
+                                <option value="-1">Chọn bài</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label class="control-label">Mức độ</label>
+                            <select class="form-select" id="examDetailSelectLevel">
+                                <option value="-1">Chọn mức độ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="control-label mt-2 mb-1">Chọn câu hỏi</div>
+
+                    <div class="input-group">
+                        <select class="form-select" id="examDetailSelectQuestion">
+                            <option value="-1">Chọn câu hỏi</option>
+                        </select>
+                        <div class="input-group-prepend">
+                            <button class="btn btn-success" type="submit" id="btnSubmitDetail">
+                                <i class="fa-solid fa-plus"></i>
+                                Thêm câu hỏi
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2 ms-1" id="InfoExam">
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        Câu hỏi
+                                    </th>
+                                    <th>
+                                        Đáp án A
+                                    </th>
+                                    <th>
+                                        Đáp án B
+                                    </th>
+                                    <th>
+                                        Đáp án C
+                                    </th>
+                                    <th>
+                                        Đáp án D
+                                    </th>
+                                    <th>
+                                        Mức độ
+                                    </th>
+                                    <th>
+                                        Đáp án
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tBodyListDetailExam">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{
+    <script>
+        var keyword = '';
+        var page = 1;
+        var examId = -1;
+
+        $(document).ready(function () {
+            LoadListSubject();
+            LoadListDuration();
+            LoadListLevel();
+            LoadListExam(keyword, page);
+
+        });
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+
+            if ($('#examSelectSubject').val() == -1) {
+                LoadListExam(keyword, page);
+            }
+            else {
+                LoadListExamBySubject($('#examSelectSubject').val(), page);
+            }
+        })
+
+        //Load List Exam When Subject Change
+        $('#examSelectSubject').on('change', function () {
+            $("#search").val('');
+            page = 1;
+            if ($('#examSelectSubject').val() == -1) {
+                LoadListExam(keyword, page);
+            }
+            else {
+                LoadListExamBySubject($('#examSelectSubject').val(), page);
+            }
+        })
+
+        //Load List Lesson When Chgapter Change
+        $('#examDetailSelectChapter').on('change', function () {
+            if ($('#examDetailSelectChapter').val() == -1) {
+                $('#examDetailSelectLesson').empty();
+                $('#examDetailSelectLesson').append('<option value="-1">Chọn bài</option>');
+            }
+            else {
+                LoadListLesson($('#examDetailSelectChapter').val())
+            }
+        })
+
+        //Load List Question When Lesson Change
+        $('#examDetailSelectLesson').on('change', function () {
+            if ($('#examDetailSelectLesson').val() == -1 || $('#examDetailSelectLevel').val() == -1) {
+                $('#examDetailSelectQuestion').empty();
+                $('#examDetailSelectQuestion').append('<option value="-1">Chọn câu hỏi</option>');
+            }
+            else {
+                LoadListQuestion($('#examDetailSelectLesson').val(), $('#examDetailSelectLevel').val())
+            }
+        })
+
+        //Load List Question When Level Change
+        $('#examDetailSelectLevel').on('change', function () {
+            if ($('#examDetailSelectLesson').val() == -1 || $('#examDetailSelectLevel').val() == -1) {
+                $('#examDetailSelectQuestion').empty();
+                $('#examDetailSelectQuestion').append('<option value="-1">Chọn câu hỏi</option>');
+            }
+            else {
+                LoadListQuestion($('#examDetailSelectLesson').val(), $('#examDetailSelectLevel').val())
+            }
+        })
+
+        //Load List Subject
+        function LoadListSubject() {
+            //use ajax to load list subject
+            $.ajax({
+                url: "/teacherarea/exam/GetListSubject",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#examSelectSubject').empty();
+                        $('#examSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.subjectName}</option>`;
+                            $('#examSelectSubject').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Load List Duration
+        function LoadListDuration() {
+            //use ajax to load list subject
+            $.ajax({
+                url: "/teacherarea/exam/GetListDuration",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#examSelectDuration').empty();
+                        $('#examSelectDuration').append("<option value='-1' selected>Chọn loại đề thi</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.durationName}</option>`;
+                            $('#examSelectDuration').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Load List Exam
+        function LoadListExam(keyword, page) {
+            //use ajax to load list exam
+            $.ajax({
+                url: "/teacherarea/exam/GetListExam",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListExam').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.id} data-id-subject='${item.subjectId}' data-name-subject='${item.subjectName}'>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-2">${item.durationName}</td>`;
+                            tr += `<td class="col-sm-2">${item.durationTime} phút</td>`;
+                            tr += '<td class="col-sm-2">' + new Date(item.examDate).getDate()
+                                + "/" + Number(new Date(item.examDate).getMonth() + 1)
+                                + "/" + new Date(item.examDate).getFullYear() + "</td>";
+                            tr += `<td class="col-sm-3">${item.author}</td>`;
+                            tr += `<td class="col-sm-1 text-center">${item.isApprove == 1 ? '<i class="fa-solid fa-circle-check text-success"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'}</td>`;
+                            tr += '<td class="col-sm-1 text-center">';
+                            tr += '<button class="btn btn-info btn-sm" name="list"><i class="fa-solid fa-bars"></i></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListExam').append(tr);
+                        })
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Load List Exam By Subject
+        function LoadListExamBySubject(subjectId, page) {
+            //use ajax to load list exam
+            $.ajax({
+                url: "/teacherarea/exam/GetListExamBySubject",
+                type: "get",
+                data: {
+                    subiectId: subjectId,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListExam').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id='${item.id}''>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-2">${item.durationName}</td>`;
+                            tr += `<td class="col-sm-2">${item.durationTime} phút</td>`;
+                            tr += '<td class="col-sm-2">' + new Date(item.examDate).getDate()
+                                + "/" + Number(new Date(item.examDate).getMonth() + 1)
+                                + "/" + new Date(item.examDate).getFullYear() + "</td>";
+                            tr += `<td class="col-sm-3">${item.author}</td>`;
+                            tr += `<td class="col-sm-1 text-center">${item.isApprove == 1 ? '<i class="fa-solid fa-circle-check text-success"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'}</td>`;
+                            tr += '<td class="col-sm-1 text-center">';
+                            tr += '<button class="btn btn-info btn-sm" name="list"><i class="fa-solid fa-bars"></i></i></button> ';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListExam').append(tr);
+                        })
+
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Load List Chapter
+        function LoadListChapter(id) {
+            if (id != -1) {
+                $.ajax({
+                    url: "/teacherarea/exam/GetListChapterBySubject",
+                    type: "get",
+                    data: {
+                        id: id
+                    },
+                    success: function (data) {
+                        if (data.code === 200) {
+                            $('#examDetailSelectChapter').empty();
+                            $('#examDetailSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
+                            $.each(data.data, function (index, item) {
+                                let option = `<option value=${item.id}>${item.chapterName}</option>`;
+                                $('#examDetailSelectChapter').append(option);
+                            });
+                        }
+                    }
+                });
+            }
+        };
+
+        //Load List Lesson
+        function LoadListLesson(id) {
+            if (id != -1) {
+                $.ajax({
+                    url: "/teacherarea/exam/GetListLessonByChapter",
+                    type: "get",
+                    data: {
+                        id: id
+                    },
+                    success: function (data) {
+                        if (data.code === 200) {
+                            $('#examDetailSelectLesson').empty();
+                            $('#examDetailSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
+                            $.each(data.data, function (index, item) {
+                                let option = `<option value=${item.id}>${item.lessonName}</option>`;
+                                $('#examDetailSelectLesson').append(option);
+                            })
+                        }
+                    }
+                });
+            }
+        };
+
+        //Load List Level
+        function LoadListLevel() {
+            $.ajax({
+                url: "/teacherarea/exam/GetListLevel",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#examDetailSelectLevel').empty();
+                        $('#examDetailSelectLevel').append("<option value='-1' selected>Chọn mức độ</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.levelName}</option>`;
+                            $('#examDetailSelectLevel').append(option);
+                        });
+                    }
+                }
+            });
+        };
+
+        //Load List Question
+        function LoadListQuestion(lessonId, levelId) {
+            //use ajax to load list question
+            $.ajax({
+                url: "/teacherarea/exam/GetListQuestion",
+                type: "get",
+                data: {
+                    levelId,
+                    lessonId
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#examDetailSelectQuestion').empty();
+                        $('#examDetailSelectQuestion').append("<option value='-1' selected>Chọn câu hỏi</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.questionContent}</option>`;
+                            $('#examDetailSelectQuestion').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Load List Question By Exam
+        function LoadListQuestionByExam(examId) {
+            //use ajax to load list question
+            $.ajax({
+                url: "/teacherarea/exam/GetListQuestionByExam",
+                type: "get",
+                data: {
+                    examId
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        let questionCount = data.data.length;
+                        let levelCount = {};
+                        $('#tBodyListDetailExam').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id='${item.id}'>`;
+                            tr += `<td class="col-sm-2">${item.questionContent}</td>`;
+                            tr += `<td class="col-sm-2">${item.answerA}</td>`;
+                            tr += `<td class="col-sm-2">${item.answerB}</td>`;
+                            tr += `<td class="col-sm-2">${item.answerC}</td>`;
+                            tr += `<td class="col-sm-2">${item.answerD}</td>`;
+                            tr += `<td class="col-sm-1">${item.level}</td>`;
+                            tr += `<td class="col-sm-1">${item.answer}</td>`;
+                            tr += `<td class="col-sm-1 text-end">`;
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+                            $('#tBodyListDetailExam').append(tr);
+
+                            if (levelCount[item.level]) {
+                                levelCount[item.level]++;
+                            } else {
+                                levelCount[item.level] = 1;
+                            }
+                        })
+
+                        $('#InfoExam').empty();
+                        $('#InfoExam').append(`<div class='col-xl-2 col-sm-3'>Số câu hỏi: <span style="font-weight:bold">${questionCount}</span></div>`);
+                        $('#InfoExam').append(`<div class='col-xl-1 col-sm-2' style="font-weight:bold">Mức độ:</div>`);
+
+                        $.each(levelCount, function (level, count) {
+                            $('#InfoExam').append(`<div class='col-xl-1 col-sm-2'>${level}: <span style="font-weight:bold">${count}</span></div>`)
+                        });
+                    }
+                }
+            })
+        };
+
+        //Get Detail
+        $(document).on('click', "button[name='list']", function () {
+            examId = $(this).closest('tr').attr('id');
+            let subjectId = $('#examSelectSubject').val() != -1 ? $('#examSelectSubject').val() : $(this).closest('tr').attr('data-id-subject');
+            let subjectName = $('#examSelectSubject').val() != -1 ? $('#examSelectSubject option:selected').text() : $(this).closest('tr').attr('data-name-subject');
+
+            $('#examDetailSelectLesson').empty();
+            $('#examDetailSelectLesson').append('<option value="-1">Chọn bài</option>')
+            LoadListChapter(subjectId);
+            LoadListQuestionByExam(examId)
+
+            $('#modalDetailTitle').text(`Đề thi môn ${subjectName} `)
+            //show modal
+            $('#modalDetailExam').modal('show');
+
+        });
+
+        //Delete Question
+        $(document).on('click', "button[name='delete']", function () {
+            let id = $(this).closest('tr').attr('id')
+
+            if (confirm("Bạn có chắc muốn xóa câu hỏi này?")) {
+                //Use ajax delete question
+                $.ajax({
+                    url: '/teacherarea/exam/DeleteQuestion',
+                    type: "post",
+                    data: {
+                        id
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            LoadListQuestionByExam(examId);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        });
+
+
+        //Add Exam
+        $('#btnAdd').click(function () {
+            if ($('#examSelectSubject').val() == -1) {
+                alert('Vui lòng chọn môn học');
+                return;
+            }
+
+            $('#modalTitle').text("Tạo đề thi");
+
+            $('#examDate').val('');
+            $('#examSelectDuration').val(-1);
+
+            //show button add
+            $('#btnSubmit').text('Tạo');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalExam').modal('show');
+        });
+
+        //Submit Modal
+        $('#btnSubmit').click(function () {
+            let examDate = $('#examDate').val();
+            let subjectId = $('#examSelectSubject').val();
+            let durationId = $('#examSelectDuration').val();
+
+            if (examDate.length == 0 || durationId == -1) {
+                alert("Vui lòng nhập đầy đủ thông tin!");
+                return;
+            }
+
+            $.ajax({
+                url: '/teacherarea/exam/AddExam',
+                type: 'post',
+                data: {
+                    examDate,
+                    subjectId,
+                    durationId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        alert(data.message);
+
+                        LoadListExamBySubject($('#examSelectSubject').val(), page);
+
+                        $('#examDate').val('');
+                        $('#examSelectDuration').val(-1);
+                    }
+                    else {
+                        alert(data.message);
+                    }
+                }
+            })
+        })
+
+        //Submit Question
+        $('#btnSubmitDetail').click(function () {
+            if ($('#examDetailSelectQuestion').val() == -1) {
+                alert("Vui lòng chọn câu hỏi!");
+                return;
+            }
+
+            $.ajax({
+                url: '/teacherarea/exam/AddQuestion',
+                type: 'post',
+                data: {
+                    examId,
+                    questionId: $('#examDetailSelectQuestion').val()
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        alert(data.message);
+
+                        LoadListQuestionByExam(examId);
+                    }
+                    else {
+                        alert(data.message);
+                    }
+                }
+            })
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+            page = 1;
+
+            if (keyword.length == 0) {
+                return;
+            }
+
+            $('#examSelectSubject').val(-1)
+            LoadListExam(keyword, page);
+        })
+
+        //Reload list class input null
+        $('#search').keyup(function () {
+            if ($("#search").val().length < 1) {
+                keyword = '';
+                page = 1;
+                if ($('#examSelectSubject').val() == -1) {
+                    LoadListExam(keyword, page);
+                }
+                else {
+                    LoadListExamBySubject($('#examSelectSubject').val(), page);
+                }
+            }
+        })
+    </script>
+}
+
+

@@ -21,7 +21,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
             return View();
         }
 
-        //Get List Class
+        //Get List Enroll
         [HttpGet]
         public JsonResult GetListEnroll(int year, string keyword, int page)
         {
@@ -70,6 +70,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
         }
 
         //Get All Class
+        [HttpGet]
         public JsonResult GetAllClass()
         {
             try
@@ -204,7 +205,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Update Enrollment
+        //Update Enroll
         [HttpPost]
         public JsonResult UpdateEnroll(int id, string className, string classMeta)
         {

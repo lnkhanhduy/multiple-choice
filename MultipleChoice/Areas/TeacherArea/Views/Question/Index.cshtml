@@ -1,0 +1,778 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Areas/TeacherArea/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<div class="row">
+    <div class="form-group col-sm-2">
+        <select class="form-select" id="questionSelectGradeFilter">
+            <option value="-1">Chọn khối</option>
+        </select>
+    </div>
+
+    <div class="form-group col-sm-2">
+        <select class="form-select" id="questionSelectSubjectFilter">
+            <option value="-1">Chọn môn</option>
+        </select>
+    </div>
+
+    <div class="col-sm-3 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Thêm câu hỏi
+        </button>
+    </div>
+
+    <div class="col-sm-3 offset-sm-2 mb-2">
+        <form id="formSearch">
+            <div class="input-group">
+                <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
+                <div class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav aria-label="..." class="mt-2">
+    <ul class="pagination pagination-sm" id="pagination">
+    </ul>
+</nav>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    STT
+                </th>
+                <th>
+                    Câu hỏi
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListQuestion">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalQuestion">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <input hidden id="questionId" value="" />
+                    <div class="row">
+                        <div class="form-group col-sm-2">
+                            <label class="control-label">Khối</label>
+                            <select class="form-select" id="questionSelectGrade">
+                                <option value="-1">Chọn khối</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-2">
+                            <label class="control-label">Môn</label>
+                            <select class="form-select" id="questionSelectSubject">
+                                <option value="-1">Chọn môn</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label class="control-label">Chương</label>
+                            <select class="form-select" id="questionSelectChapter">
+                                <option value="-1">Chọn chương</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label class="control-label">Bài</label>
+                            <select class="form-select" id="questionSelectLesson">
+                                <option value="-1">Chọn bài</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Câu hỏi</label>
+                            <textarea class="form-control" id="questionContent" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Đáp án A</label>
+                            <textarea class="form-control" id="answerA" rows="1"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Đáp án B</label>
+                            <textarea class="form-control" id="answerB" rows="1"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Đáp án C</label>
+                            <textarea class="form-control" id="answerC" rows="1"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Đáp án D</label>
+                            <textarea class="form-control" id="answerD" rows="1"></textarea>
+                        </div>
+                        <div class="form-group col-sm-2">
+                            <label class="control-label">Mức độ</label>
+                            <select class="form-select" id="questionSelectLevel">
+                                <option value="-1">Chọn mức độ</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-2">
+                            <label class="control-label">Đáp án</label>
+                            <select class="form-select" id="questionSelectAnswer">
+                                <option value="-1">Chọn đáp án</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-sm-8">
+                            <label class="control-label">Ghi chú</label>
+                            <textarea class="form-control" id="note" rows="1"></textarea>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button type="button" class="btn btn-success" id="btnSubmit">Thêm</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+
+@section Scripts{
+    <script>
+        var keyword = '';
+        var page = 1;
+
+        $(document).ready(function () {
+            LoadListGrade();
+            LoadListLevel();
+            LoadListAnswer();
+            LoadListQuestion(keyword, page);
+        });
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            if ($('#questionSelectSubjectFilter').val() != -1) {
+                LoadListQuestionBySubject($('#questionSelectSubjectFilter').val(), page);
+            }
+            else {
+                LoadListQuestion(keyword, page);
+            }
+        })
+
+        //Load List Subject When Grade Change
+        $('#questionSelectGrade').on('change', function () {
+            if ($('#questionSelectGrade').val() == -1) {
+                page = 1;
+                LoadListQuestion(keyword, page);
+            }
+            $("#search").val('');
+            $('#questionSelectSubject').empty();
+            $('#questionSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
+            $('#questionSelectChapter').empty();
+            $('#questionSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
+            $('#questionSelectLesson').empty();
+            $('#questionSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
+
+            $('#questionSelectGradeFilter').val($('#questionSelectGrade').val())
+            LoadListSubject($('#questionSelectGrade').val());
+        });
+
+        //Load List Subject When Grade Filter Change
+        $('#questionSelectGradeFilter').on('change', function () {
+            if ($('#questionSelectGradeFilter').val() == -1) {
+                page = 1;
+                LoadListQuestion(keyword, page);
+            }
+
+            $("#search").val('');
+            $('#questionSelectSubjectFilter').empty();
+            $('#questionSelectSubjectFilter').append("<option value='-1' selected>Chọn môn</option>");
+            LoadListSubject($('#questionSelectGradeFilter').val());
+        });
+
+        //Load List Question When Subject Filter Change
+        $('#questionSelectSubjectFilter').on('change', function () {
+            page = 1;
+            if ($('#questionSelectSubjectFilter').val() != -1) {
+                LoadListQuestionBySubject($('#questionSelectSubjectFilter').val(), page);
+            }
+            else {
+                LoadListQuestion(keyword, page);
+            }
+        });
+
+        //Load List Chapter When Subject Change
+        $('#questionSelectSubject').on('change', function () {
+            page = 1;
+            if ($('#questionSelectSubject').val() != -1) {
+                LoadListQuestionBySubject($('#questionSelectSubject').val(), page);
+            }
+            else {
+                LoadListQuestion(keyword, page);
+            }
+            $('#questionSelectChapter').empty();
+            $('#questionSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
+            $('#questionSelectLesson').empty();
+            $('#questionSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
+            $('#questionSelectSubjectFilter').val($('#questionSelectSubject').val())
+
+            LoadListChapter();
+        });
+
+        //Load List Lesson Select Chapter Change
+        $('#questionSelectChapter').on('change', function () {
+            $('#questionSelectLesson').empty();
+            $('#questionSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
+
+            LoadListLesson();
+        });
+
+        //Load List Grade
+        function LoadListGrade() {
+            //use ajax to load list grade
+            $.ajax({
+                url: "/teacherarea/question/GetAllGrade",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#questionSelectGrade').empty();
+                        $('#questionSelectGrade').append("<option value='-1' selected>Chọn khối</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.gradeName}</option>`;
+                            $('#questionSelectGrade').append(option);
+                        })
+
+                        $('#questionSelectGradeFilter').empty();
+                        $('#questionSelectGradeFilter').append("<option value='-1' selected>Chọn khối</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.gradeName}</option>`;
+                            $('#questionSelectGradeFilter').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Load List Subject
+        function LoadListSubject(id) {
+            return new Promise(function (resolve, reject) {
+                if (id != -1) {
+                    $.ajax({
+                        url: "/teacherarea/question/GetListSubjectByGrade",
+                        type: "get",
+                        data: {
+                            id
+                        },
+                        success: function (data) {
+                            if (data.code === 200) {
+                                $('#questionSelectSubject').empty();
+                                $('#questionSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
+                                $.each(data.data, function (index, item) {
+                                    let option = `<option value=${item.id}>${item.subjectName}</option>`;
+                                    $('#questionSelectSubject').append(option);
+                                });
+
+                                $('#questionSelectSubjectFilter').empty();
+                                $('#questionSelectSubjectFilter').append("<option value='-1' selected>Chọn môn học</option>");
+                                $.each(data.data, function (index, item) {
+                                    let option = `<option value=${item.id}>${item.subjectName}</option>`;
+                                    $('#questionSelectSubjectFilter').append(option);
+                                });
+                                resolve(); // Gọi resolve() khi hoàn thành
+                            }
+                        },
+                        error: function (error) {
+                            reject(error); // Gọi reject() nếu xảy ra lỗi
+                        }
+                    });
+                } else {
+                    resolve(); // Gọi resolve() trực tiếp nếu không cần gọi AJAX
+                }
+            })
+        };
+
+        //Load List Chapter
+        function LoadListChapter() {
+            return new Promise(function (resolve, reject) {
+                if ($('#questionSelectSubject').val() != -1) {
+                    $.ajax({
+                        url: "/teacherarea/question/GetListChapterBySubject",
+                        type: "get",
+                        data: {
+                            id: $('#questionSelectSubject').val()
+                        },
+                        success: function (data) {
+                            if (data.code === 200) {
+                                $('#questionSelectChapter').empty();
+                                $('#questionSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
+                                $.each(data.data, function (index, item) {
+                                    let option = `<option value=${item.id}>${item.chapterName}</option>`;
+                                    $('#questionSelectChapter').append(option);
+                                });
+                                resolve(); // Gọi resolve() khi hoàn thành
+                            }
+                        },
+                        error: function (error) {
+                            reject(error); // Gọi reject() nếu xảy ra lỗi
+                        }
+                    });
+                } else {
+                    resolve(); // Gọi resolve() trực tiếp nếu không cần gọi AJAX
+                }
+            })
+        };
+
+        //Load List Lesson
+        function LoadListLesson() {
+            return new Promise(function (resolve, reject) {
+                if ($('#questionSelectChapter').val() != -1) {
+                    $.ajax({
+                        url: "/teacherarea/question/GetListLessonByChapter",
+                        type: "get",
+                        data: {
+                            id: $('#questionSelectChapter').val()
+                        },
+                        success: function (data) {
+                            if (data.code === 200) {
+                                $('#questionSelectLesson').empty();
+                                $('#questionSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
+                                $.each(data.data, function (index, item) {
+                                    let option = `<option value=${item.id}>${item.lessonName}</option>`;
+                                    $('#questionSelectLesson').append(option);
+                                })
+                                resolve();
+                            }
+                        },
+                        error: function (error) {
+                            reject(error); // Gọi reject() nếu xảy ra lỗi
+                        }
+                    });
+                } else {
+                    resolve(); // Gọi resolve() trực tiếp nếu không cần gọi AJAX
+                }
+            })
+        };
+
+        //Load List Level
+        function LoadListLevel() {
+            //use ajax to load list lesson
+            $.ajax({
+                url: "/teacherarea/question/GetListLevel",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#questionSelectLevel').empty();
+                        $('#questionSelectLevel').append("<option value='-1' selected>Chọn mức độ</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.levelName}</option>`;
+                            $('#questionSelectLevel').append(option);
+                        })
+                    }
+                }
+            })
+        }
+
+        //Load List Answer
+        function LoadListAnswer() {
+            //use ajax to load list lesson
+            $.ajax({
+                url: "/teacherarea/question/GetListAnswer",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#questionSelectAnswer').empty();
+                        $('#questionSelectAnswer').append("<option value='-1' selected>Chọn đáp án</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.answerLabel}</option>`;
+                            $('#questionSelectAnswer').append(option);
+                        })
+                    }
+                }
+            })
+        }
+
+        //Load List Question
+        function LoadListQuestion(keyword, page) {
+            //use ajax to load list class
+            $.ajax({
+                url: "/teacherarea/question/GetListQuestion",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListQuestion').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.id}>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-9">${item.questionContent}</td>`;
+                            tr += '<td class="col-sm-2 text-end">';
+                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListQuestion').append(tr);
+                        })
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Load List Question By Subject
+        function LoadListQuestionBySubject(id, page) {
+            //use ajax to load list class
+            $.ajax({
+                url: "/teacherarea/question/GetListQuestionBySubject",
+                type: "get",
+                data: {
+                    id,
+                    page
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListQuestion').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.id}>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-9">${item.questionContent}</td>`;
+                            tr += '<td class="col-sm-2 text-end">';
+                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListQuestion').append(tr);
+                        })
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Get Detail
+        $(document).on('click', "button[name='view']", function () {
+            let questionId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/teacherarea/question/GetDetail',
+                type: "get",
+                data: {
+                    id: questionId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        console.log(data)
+                        //set title
+                        $('#modalTitle').text("Chi tiết lớp");
+                        //set value input
+                        $('#questionSelectGrade').val(data.data[0].gradeId);
+
+                        LoadListSubject(data.data[0].gradeId).then(function () {
+                            $('#questionSelectSubject').val(data.data[0].subjectId);
+                        }).then(function () {
+                            return LoadListChapter();
+                        }).then(function () {
+                            $('#questionSelectChapter').val(data.data[0].chapterId);
+                        }).then(function () {
+                            return LoadListLesson();
+                        }).then(function () {
+                            $('#questionSelectLesson').val(data.data[0].lessonId);
+                        });
+
+                        $('#questionContent').val(data.data[0].questionContent);
+                        $('#answerA').val(data.data[0].answerA);
+                        $('#answerB').val(data.data[0].answerB);
+                        $('#answerC').val(data.data[0].answerC);
+                        $('#answerD').val(data.data[0].answerD);
+                        $('#questionSelectLevel').val(data.data[0].level);
+                        $('#questionSelectAnswer').val(data.data[0].answer);
+                        $('#note').val(data.data[0].note);
+
+                        //readonly input
+                        $('#questionContent').prop('readonly', true);
+                        $('#answerA').prop('readonly', true);
+                        $('#answerB').prop('readonly', true);
+                        $('#answerC').prop('readonly', true);
+                        $('#answerD').prop('readonly', true);
+                        $('#note').prop('readonly', true);
+
+                        //hidden button add
+                        $('#btnSubmit').hide();
+
+                        //show modal
+                        $('#modalQuestion').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Add Question
+        $('#btnAdd').click(function () {
+            $('#modalTitle').text("Thêm câu hỏi");
+
+            $('#questionId').val('');
+            $('#questionSelectGrade').val($('#questionSelectGradeFilter').val());
+            $('#questionSelectSubject').val($('#questionSelectSubjectFilter').val());
+            LoadListChapter($('#questionSelectSubjectFilter').val());
+            $('#questionSelectLesson').val(-1);
+            $('#questionContent').val('');
+            $('#answerA').val('');
+            $('#answerB').val('');
+            $('#answerC').val('');
+            $('#answerD').val('');
+            $('#questionSelectLevel').val(-1);
+            $('#questionSelectAnswer').val(-1);
+            $('#note').val('');
+
+            $('#questionContent').prop('readonly', false);
+            $('#answerA').prop('readonly', false);
+            $('#answerB').prop('readonly', false);
+            $('#answerC').prop('readonly', false);
+            $('#answerD').prop('readonly', false);
+            $('#note').prop('readonly', false);
+
+            //show button add
+            $('#btnSubmit').text('Thêm');
+            $('#btnSubmit').show();
+
+            //show modal
+            $('#modalQuestion').modal('show');
+        });
+
+        //Update Class
+        $(document).on('click', "button[name='update']", function () {
+            let questionId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/teacherarea/question/GetDetail',
+                type: "get",
+                data: {
+                    id: questionId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        //set title
+                        $('#modalTitle').text("Cập nhật câu hỏi");
+                        //set value input
+                        $('#questionSelectGrade').val(data.data[0].gradeId);
+
+                        LoadListSubject(data.data[0].gradeId).then(function () {
+                            $('#questionSelectSubject').val(data.data[0].subjectId);
+                        }).then(function () {
+                            return LoadListChapter();
+                        }).then(function () {
+                            $('#questionSelectChapter').val(data.data[0].chapterId);
+                        }).then(function () {
+                            return LoadListLesson();
+                        }).then(function () {
+                            $('#questionSelectLesson').val(data.data[0].lessonId);
+                        });
+
+                        $('#questionId').val(questionId);
+                        $('#questionContent').val(data.data[0].questionContent);
+                        $('#answerA').val(data.data[0].answerA);
+                        $('#answerB').val(data.data[0].answerB);
+                        $('#answerC').val(data.data[0].answerC);
+                        $('#answerD').val(data.data[0].answerD);
+                        $('#questionSelectLevel').val(data.data[0].level);
+                        $('#questionSelectAnswer').val(data.data[0].answer);
+                        $('#note').val(data.data[0].note);
+
+                        //readonly input
+                        $('#questionContent').prop('readonly', false);
+                        $('#answerA').prop('readonly', false);
+                        $('#answerB').prop('readonly', false);
+                        $('#answerC').prop('readonly', false);
+                        $('#answerD').prop('readonly', false);
+                        $('#note').prop('readonly', false);
+
+                        //show button add
+                        $('#btnSubmit').text('Lưu');
+                        $('#btnSubmit').show();
+
+                        //show modal
+                        $('#modalQuestion').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Delete Question
+        $(document).on('click', "button[name='delete']", function () {
+            let questionId = $(this).closest('tr').attr('id');
+
+            if (confirm("Bạn có chắc muốn xóa câu hỏi này?")) {
+                //Use ajax delete question
+                $.ajax({
+                    url: '/teacherarea/question/DeleteQuestion',
+                    type: "post",
+                    data: {
+                        id: questionId
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+                            LoadListQuestion(keyword, page);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+
+        });
+
+        //Submit Modal
+        $('#btnSubmit').click(function () {
+            let questionId = $('#questionId').val();
+            let lesson = $('#questionSelectLesson').val();
+            let questionContent = $('#questionContent').val().trim();
+            let answerA = $('#answerA').val().trim();
+            let answerB = $('#answerB').val().trim();
+            let answerC = $('#answerC').val().trim();
+            let answerD = $('#answerD').val().trim();
+            let level = $('#questionSelectLevel').val();
+            let answer = $('#questionSelectAnswer').val();
+            let note = $('#note').val().trim();
+
+            if (lesson == -1 || level == -1 || answer == -1 || questionContent.length == 0 || answerA.length == 0 || answerB.length == 0 || answerC.length == 0 || answerD.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu!");
+                return;
+            }
+
+
+            if (questionId.length == 0) {
+                //Use ajax add question
+                $.ajax({
+                    url: '/teacherarea/question/AddQuestion',
+                    type: 'post',
+                    data: {
+                        questionContent,
+                        answerA,
+                        answerB,
+                        answerC,
+                        answerD,
+                        answer,
+                        lesson,
+                        level,
+                        note
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#questionContent').val('');
+                            $('#answerA').val('');
+                            $('#answerB').val('');
+                            $('#answerC').val('');
+                            $('#answerD').val('');
+                            $('#questionSelectLevel').val(-1);
+                            $('#questionSelectAnswer').val(-1);
+                            $('#note').val('');
+
+                            LoadListQuestion(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+            else {
+                //Use ajax update question
+                $.ajax({
+                    url: '/teacherarea/question/UpdateQuestion',
+                    type: 'post',
+                    data: {
+                        id: questionId,
+                        questionContent,
+                        answerA,
+                        answerB,
+                        answerC,
+                        answerD,
+                        answer,
+                        lesson,
+                        level,
+                        note
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#modalQuestion').modal('hide');
+                            LoadListQuestion(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+
+            if (keyword.length == 0) {
+                return;
+            }
+            page = 1;
+            $('#questionSelectGradeFilter').val(-1);
+            $('#questionSelectSubjectFilter').empty();
+            $('#questionSelectSubjectFilter').append('<option value="-1">Chọn môn</option>');
+            LoadListQuestion(keyword, page)
+        })
+
+        //Reload list class input null
+        $('#search').keyup(function () {
+            if ($("#search").val().length < 1) {
+                keyword = '';
+                page = 1;
+                LoadListQuestion(keyword, page);
+            }
+        })
+    </script>
+}
+

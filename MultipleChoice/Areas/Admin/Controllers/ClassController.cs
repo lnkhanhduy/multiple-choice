@@ -73,6 +73,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
         }
 
         //Get All Class
+        [HttpGet]
         public JsonResult GetAllClass()
         {
             try
@@ -95,6 +96,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
+        //Get List Class By Id Grade
         [HttpGet]
         public JsonResult GetListClassByGrade(int id)
         {

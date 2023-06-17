@@ -38,6 +38,9 @@
                     STT
                 </th>
                 <th>
+                    Khối
+                </th>
+                <th>
                     Tên môn học
                 </th>
                 <th>
@@ -58,6 +61,11 @@
                 <h5 class="card-header" id="modalTitle"></h5>
                 <div class="card-body">
                     <input hidden id="subjectId" value="" />
+                    <div class="form-group">
+                        <select class="form-select" id="subjectSelectGrade">
+                            <option value='-1' selected>Chọn khối</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label class="control-label mt-2">Tên môn học</label>
                         <input type="text" class="form-control" id="subjectName" placeholder="Tên môn học" />
@@ -84,6 +92,7 @@
         var page = 1;
 
         $(document).ready(function () {
+            LoadListGrade();
             LoadListSubject(keyword, page);
         });
 
@@ -93,6 +102,25 @@
             page = $(this).text();
             LoadListSubject(keyword, page);
         })
+
+        //Load List Grade
+        function LoadListGrade() {
+            //use ajax to load list grade
+            $.ajax({
+                url: "/admin/grade/GetAllGrade",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#subjectSelectGrade').empty();
+                        $('#subjectSelectGrade').append("<option value='-1' selected>Chọn khối</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.gradeName}</option>`;
+                            $('#subjectSelectGrade').append(option);
+                        })
+                    }
+                }
+            })
+        };
 
         //Load List Subject
         function LoadListSubject() {
@@ -110,9 +138,10 @@
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id=${item.id}>`;
                             tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-4">${item.subjectName}</td>`;
-                            tr += `<td class="col-sm-4">${item.meta}</td>`;
-                            tr += '<td class="col-sm-3 text-end">';
+                            tr += `<td class="col-sm-3">${item.gradeName}</td>`;
+                            tr += `<td class="col-sm-3">${item.subjectName}</td>`;
+                            tr += `<td class="col-sm-3">${item.meta}</td>`;
+                            tr += '<td class="col-sm-2 text-end">';
                             tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
                             tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
                             tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
@@ -156,6 +185,7 @@
                         $('#modalTitle').text("Chi tiết môn học");
 
                         //set value input
+                        $('#subjectSelectGrade').val(data.data.idGrade)
                         $('#subjectName').val(data.data.subjectName);
                         $('#subjectMeta').val(data.data.meta);
 
@@ -179,6 +209,7 @@
         $('#btnAdd').click(function () {
             $('#modalTitle').text("Thêm môn học");
 
+            $('#subjectSelectGrade').val(-1);
             $('#subjectId').val('');
             $('#subjectName').val('');
             $('#subjectMeta').val('');
@@ -210,6 +241,7 @@
                         $('#modalTitle').text("Cập nhật thông tin môn học");
 
                         //set value input
+                        $('#subjectSelectGrade').val(data.data.idGrade);
                         $('#subjectId').val(subjectId);
                         $('#subjectName').val(data.data.subjectName);
                         $('#subjectMeta').val(data.data.meta);
@@ -259,10 +291,11 @@
         //Submit Modal
         $('#btnSubmit').click(function () {
             let subjectId = $('#subjectId').val();
+            let gradeId = $('#subjectSelectGrade').val();
             let subjectName = $('#subjectName').val().trim();
             let subjectMeta = $('#subjectMeta').val().trim();
 
-            if (subjectName.length == 0 || subjectMeta.length == 0) {
+            if (gradeId == -1 || subjectName.length == 0 || subjectMeta.length == 0) {
                 alert("Vui lòng nhập đầy đủ dữ liệu!");
                 return;
             }
@@ -273,6 +306,7 @@
                     url: '/admin/subject/AddSubject',
                     type: 'post',
                     data: {
+                        gradeId,
                         subjectName,
                         subjectMeta
                     },
@@ -280,6 +314,7 @@
                         if (data.code == 200) {
                             alert(data.message);
 
+                            $('#subjectSelectGrade').val(-1);
                             $('#subjectName').val('');
                             $('#subjectMeta').val('');
                             LoadListSubject(keyword, page);
@@ -297,6 +332,7 @@
                     type: 'post',
                     data: {
                         id: subjectId,
+                        gradeId,
                         subjectName,
                         subjectMeta
                     },
