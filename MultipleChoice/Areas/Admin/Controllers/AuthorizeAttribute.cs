@@ -10,7 +10,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
         {
             if (context.HttpContext.Session.GetString("admin") == null)
             {
-                context.Result = new RedirectToActionResult("Login", "Default", null);
+                context.Result = new RedirectToActionResult("Login", "Default", new { area = "admin" });
             }
         }
     }

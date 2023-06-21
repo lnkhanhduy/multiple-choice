@@ -8,6 +8,7 @@ namespace MultipleChoice.Models
         public Teacher()
         {
             Exams = new HashSet<Exam>();
+            Subjects = new HashSet<Subject>();
             Teachings = new HashSet<Teaching>();
         }
 
@@ -18,10 +19,12 @@ namespace MultipleChoice.Models
         public string? Phone { get; set; }
         public string? Email { get; set; }
         public string? Address { get; set; }
-        public byte? IsLeader { get; set; }
+        public int? IdSubject { get; set; }
         public byte? IsDelete { get; set; }
 
+        public virtual Subject? IdSubjectNavigation { get; set; }
         public virtual ICollection<Exam> Exams { get; set; }
+        public virtual ICollection<Subject> Subjects { get; set; }
         public virtual ICollection<Teaching> Teachings { get; set; }
     }
 }

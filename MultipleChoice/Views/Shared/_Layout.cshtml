@@ -21,44 +21,7 @@
                 <div class="collapse navbar-collapse" id="navbarScroll">
                     <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="#">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">View</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
-                                Danh sách khối
-                            </a>
-                            @*                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
-                            @foreach (var item in ViewBag.Grades)
-                            {
-                            <li class="dropend">
-                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            @item.GradeName
-                            </a>
-                            <ul class="dropdown-menu">
-                            @foreach (var itemSubject in ViewBag.Subjects)
-                            {
-                            if (itemSubject.IdGrade == item.Id)
-                            {
-                            <li>
-                            <a class="dropdown-item" href="#">
-                            @itemSubject.SubjectName
-                            </a>
-                            </li>
-                            }
-
-                            }
-
-
-                            </ul>
-                            </li>
-                            }
-                            </ul>*@
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Link</a>
+                            <a class="nav-link active" aria-current="page" href="#">Trang chủ</a>
                         </li>
                     </ul>
                     <form class="d-flex">
@@ -73,12 +36,9 @@
         <main role="main" class="pb-3">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <i class="fa-solid fa-house"></i>
-                    <i class="fa-solid fa-chevron-right"></i>
-                    @ViewData["Controller"]
+                    Học sinh
                     <i class="fa-solid fa-chevron-right"></i>
                     @ViewData["Title"]
-
                 </div>
                 <div class="card-body">
                     @RenderBody()

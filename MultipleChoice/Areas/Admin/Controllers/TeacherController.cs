@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MultipleChoice.Models;
+using System.Net;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace MultipleChoice.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    /*[Authorize]*/
+    //[Authorize]
     public class TeacherController : Controller
     {
         private readonly MultipleChoiceContext _context;
@@ -19,14 +21,46 @@ namespace MultipleChoice.Areas.Admin.Controllers
             return View();
         }
 
-        //Get List Teacher
+        //Get list subject
         [HttpGet]
-        public JsonResult GetListTeacher(string keyword, int page)
+        public JsonResult GetListSubject()
         {
             try
             {
-                var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listTeacherFromDB = (from _teacher in _context.Teachers.Where(x => x.IsDelete != 1)
+                var listSubject = (from _subject in _context.Subjects.Where(x => x.IsDelete != 1).OrderBy(x => x.SubjectName)
+                                   select new
+                                   {
+                                       Id = _subject.Id,
+                                       SubjectName = _subject.SubjectName,
+                                   }).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách môn học thành công!",
+                    data = listSubject
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách môn học thất bại: " + ex.Message
+                });
+            }
+
+        }
+
+        //Get list teacher
+        [HttpGet]
+        public JsonResult GetListTeacher(int subjectId, string keyword, int page)
+        {
+            try
+            {
+                var settingsPage = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
+                var listTeacherFromDB = (from _teacher in _context.Teachers.Where(x => x.IsDelete != 1 && x.IdSubject == subjectId).OrderBy(x => x.TeacherName)
+                                         join _subject in _context.Subjects on _teacher.IdSubject equals _subject.Id
                                          select new
                                          {
                                              Id = _teacher.Id,
@@ -35,7 +69,6 @@ namespace MultipleChoice.Areas.Admin.Controllers
                                              Phone = _teacher.Phone,
                                              Email = _teacher.Email,
                                              Address = _teacher.Address,
-                                             IsLeader = _teacher.IsLeader,
                                          }).ToList();
 
                 if (keyword != null)
@@ -48,9 +81,9 @@ namespace MultipleChoice.Areas.Admin.Controllers
                         .ToList();
                 }
 
-                var pageSize = listTeacherFromDB.Count % settingsPages == 0 ? listTeacherFromDB.Count / settingsPages : listTeacherFromDB.Count / settingsPages + 1;
-                var listTeacher = listTeacherFromDB.Skip((page - 1) * settingsPages)
-                                    .Take(settingsPages)
+                var pageSize = listTeacherFromDB.Count % settingsPage == 0 ? listTeacherFromDB.Count / settingsPage : listTeacherFromDB.Count / settingsPage + 1;
+                var listTeacher = listTeacherFromDB.Skip((page - 1) * settingsPage)
+                                    .Take(settingsPage)
                                     .ToList();
                 return Json(new
                 {
@@ -71,33 +104,9 @@ namespace MultipleChoice.Areas.Admin.Controllers
 
         }
 
-        //Get All Teacher
+        //Get detail teacher
         [HttpGet]
-        public JsonResult GetAllTeacher()
-        {
-            try
-            {
-                var listTeacher = _context.Teachers.Where(x => x.IsDelete != 1).ToList();
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách giáo viên thành công!",
-                    data = listTeacher
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách giáo viên thất bại: " + ex.Message
-                });
-            }
-        }
-
-        //Get Detail
-        [HttpGet]
-        public JsonResult GetDetail(int id)
+        public JsonResult GetDetailTeacher(int id)
         {
             try
             {
@@ -120,13 +129,14 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Add Teacher
+        //Add teacher
         [HttpPost]
-        public JsonResult AddTeacher(string teacherId, string password, string teacherName, string phone, string email, string address, byte isLeader)
+        public JsonResult AddTeacher(int subjectId, string teacherId, string password, string teacherName, string phone, string email, string address)
         {
             try
             {
-                var _checkTeacher = _context.Teachers.FirstOrDefault(x => x.IdTeacher == teacherId || x.Email == email || x.Phone == phone);
+                var _checkTeacher = _context.Teachers.FirstOrDefault(x => x.IsDelete != 1 && (x.IdTeacher == teacherId || x.Email == email || x.Phone == phone));
+
                 if (_checkTeacher != null)
                 {
                     if (_checkTeacher.IdTeacher == teacherId)
@@ -157,13 +167,13 @@ namespace MultipleChoice.Areas.Admin.Controllers
 
                 var _teacher = new Teacher();
 
+                _teacher.IdSubject = subjectId;
                 _teacher.IdTeacher = teacherId;
-                _teacher.Password = password;
+                _teacher.Password = BCrypt.Net.BCrypt.HashPassword(password);
                 _teacher.TeacherName = teacherName;
                 _teacher.Phone = phone;
                 _teacher.Email = email;
                 _teacher.Address = address;
-                _teacher.IsLeader = isLeader;
 
                 _context.Teachers.Add(_teacher);
                 _context.SaveChanges();
@@ -184,9 +194,9 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Update Teacher
+        //Update teacher
         [HttpPost]
-        public JsonResult UpdateTeacher(int id, string teacherId, string password, string teacherName, string phone, string email, string address, byte isLeader)
+        public JsonResult UpdateTeacher(int id, int subjectId, string teacherId, string password, string teacherName, string phone, string email, string address, byte isLeader)
         {
             try
             {
@@ -220,20 +230,28 @@ namespace MultipleChoice.Areas.Admin.Controllers
                     }
                 }
 
-                //Find teacher by id
                 var _teacher = _context.Teachers.SingleOrDefault(x => x.Id == id);
 
-                //Set new value teacher
-                _teacher.IdTeacher = teacherId;
-                _teacher.Password = password;
-                _teacher.TeacherName = teacherName;
-                _teacher.Phone = phone;
-                _teacher.Email = email;
-                _teacher.Address = address;
-                _teacher.IsLeader = isLeader;
+                if (_teacher != null)
+                {
+                    _teacher.IdSubject = subjectId;
+                    _teacher.IdTeacher = teacherId;
+                    _teacher.Password = BCrypt.Net.BCrypt.HashPassword(password);
+                    _teacher.TeacherName = teacherName;
+                    _teacher.Phone = phone;
+                    _teacher.Email = email;
+                    _teacher.Address = address;
 
-                //Save data
-                _context.SaveChanges();
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy giáo viên!",
+                    });
+                }
 
                 return Json(new
                 {
@@ -251,18 +269,28 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Delete Teacher
+        //Delete teacher
         [HttpPost]
         public JsonResult DeleteTeacher(int id)
         {
             try
             {
-                //Find teacher by id
                 var _teacher = _context.Teachers.SingleOrDefault(x => x.Id == id);
-                _teacher.IsDelete = 1;
 
-                //Save data
-                _context.SaveChanges();
+                if (_teacher != null)
+                {
+                    _teacher.IsDelete = 1;
+
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy giáo viên!",
+                    });
+                }
 
                 return Json(new
                 {

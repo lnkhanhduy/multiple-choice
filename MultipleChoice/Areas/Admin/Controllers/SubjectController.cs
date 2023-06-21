@@ -4,7 +4,7 @@ using MultipleChoice.Models;
 namespace MultipleChoice.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    /*[Authorize]*/
+    [Authorize]
     public class SubjectController : Controller
     {
         private readonly MultipleChoiceContext _context;
@@ -25,7 +25,57 @@ namespace MultipleChoice.Areas.Admin.Controllers
             return View();
         }
 
-        //Get List Subject
+        //Get list grade
+        [HttpGet]
+        public JsonResult GetListGrade()
+        {
+            try
+            {
+                var listGrade = _context.Grades.Where(x => x.IsDelete != 1).AsEnumerable().OrderBy(x => GetNumber(x.GradeName)).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách khối thành công!",
+                    data = listGrade
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách khối thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Get list teacher
+        [HttpGet]
+        public JsonResult GetListTeacher()
+        {
+            try
+            {
+                var listTeacher = _context.Teachers.Where(x => x.IsDelete != 1).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách giáo viên thành công!",
+                    data = listTeacher
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách giáo viên thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Get list subject
         [HttpGet]
         public JsonResult GetListSubject(string keyword, int page)
         {
@@ -43,7 +93,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
                                              Meta = _subject.Meta,
                                          }).AsEnumerable()
                                          .OrderBy(x => GetNumber(x.GradeName))
-                                         .ThenBy(x => GetNumber(x.SubjectName)).ToList();
+                                         .ThenBy(x => x.SubjectName).ToList();
 
                 if (keyword != null)
                 {
@@ -71,69 +121,11 @@ namespace MultipleChoice.Areas.Admin.Controllers
                     message = "Lấy danh sách môn học thất bại: " + ex.Message
                 });
             }
-
         }
 
-        //Get List Subject By Grade
+        //Get detail subject
         [HttpGet]
-        public JsonResult GetListSubjectByGrade(int id)
-        {
-            try
-            {
-                var listSubject = (from _subject in _context.Subjects.Where(x => x.IdGrade == id && x.IsDelete != 1)
-                                   select new
-                                   {
-                                       Id = _subject.Id,
-                                       SubjectName = _subject.SubjectName,
-                                   }).AsEnumerable()
-                          .OrderBy(x => GetNumber(x.SubjectName)).ToList();
-
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách môn học thành công!",
-                    data = listSubject
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách môn học thất bại: " + ex.Message
-                });
-            }
-
-        }
-
-        //Get All Subject
-        [HttpGet]
-        public JsonResult GetAllSubject()
-        {
-            try
-            {
-                var listSubject = _context.Subjects.Where(x => x.IsDelete != 1).ToList();
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách môn học thành công!",
-                    data = listSubject
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách môn học thất bại: " + ex.Message
-                });
-            }
-
-        }
-
-        //Get Detail
-        [HttpGet]
-        public JsonResult GetDetail(int id)
+        public JsonResult GetDetailSubject(int id)
         {
             try
             {
@@ -156,13 +148,14 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Add Subject
+        //Add subject
         [HttpPost]
-        public JsonResult AddSubject(int gradeId, string subjectName, string subjectMeta)
+        public JsonResult AddSubject(int gradeId, int leaderId, string subjectName, string subjectMeta)
         {
             try
             {
                 var _subject = new Subject();
+                _subject.IdLeader = leaderId;
                 _subject.IdGrade = gradeId;
                 _subject.SubjectName = subjectName;
                 _subject.Meta = subjectMeta;
@@ -186,22 +179,31 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Update Subject
+        //Update subject
         [HttpPost]
-        public JsonResult UpdateSubject(int id, int gradeId, string subjectName, string subjectMeta)
+        public JsonResult UpdateSubject(int id, int leaderId, int gradeId, string subjectName, string subjectMeta)
         {
             try
             {
-                //Find subject by id
                 var _subject = _context.Subjects.SingleOrDefault(x => x.Id == id);
 
-                //Set new value subject
-                _subject.IdGrade = gradeId;
-                _subject.SubjectName = subjectName;
-                _subject.Meta = subjectMeta;
+                if (_subject != null)
+                {
+                    _subject.IdLeader = leaderId;
+                    _subject.IdGrade = gradeId;
+                    _subject.SubjectName = subjectName;
+                    _subject.Meta = subjectMeta;
 
-                //Save data
-                _context.SaveChanges();
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy môn học!",
+                    });
+                }
 
                 return Json(new
                 {
@@ -219,18 +221,28 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Delete Class
+        //Delete subject
         [HttpPost]
         public JsonResult DeleteSubject(int id)
         {
             try
             {
-                //Find subject by id
                 var _subject = _context.Subjects.SingleOrDefault(x => x.Id == id);
-                _subject.IsDelete = 1;
 
-                //Save data
-                _context.SaveChanges();
+                if (_subject != null)
+                {
+                    _subject.IsDelete = 1;
+
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy môn học!",
+                    });
+                }
 
                 return Json(new
                 {
@@ -248,5 +260,4 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
     }
-
 }

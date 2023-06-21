@@ -3,14 +3,11 @@
 namespace MultipleChoice.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize]
     public class AdminHomeController : Controller
     {
         public IActionResult Index()
         {
-            if (HttpContext.Session.GetString("admin") == null)
-            {
-                return RedirectToAction("Login", "Default", new { area = "admin" });
-            }
             return View();
 
         }

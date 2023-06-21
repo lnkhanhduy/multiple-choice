@@ -277,7 +277,7 @@ namespace MultipleChoice.Models
                     .WithMany(p => p.Results)
                     .HasForeignKey(d => d.IdStudent)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Results_Members");
+                    .HasConstraintName("FK_Results_Students");
             });
 
             modelBuilder.Entity<Setting>(entity =>
@@ -337,6 +337,11 @@ namespace MultipleChoice.Models
                     .WithMany(p => p.Subjects)
                     .HasForeignKey(d => d.IdGrade)
                     .HasConstraintName("FK_Subjects_Grades");
+
+                entity.HasOne(d => d.IdLeaderNavigation)
+                    .WithMany(p => p.Subjects)
+                    .HasForeignKey(d => d.IdLeader)
+                    .HasConstraintName("FK_Subjects_Teachers");
             });
 
             modelBuilder.Entity<Teacher>(entity =>
@@ -353,8 +358,6 @@ namespace MultipleChoice.Models
 
                 entity.Property(e => e.IsDelete).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.IsLeader).HasDefaultValueSql("((0))");
-
                 entity.Property(e => e.Password)
                     .HasMaxLength(150)
                     .IsUnicode(false);
@@ -364,6 +367,11 @@ namespace MultipleChoice.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.TeacherName).HasMaxLength(30);
+
+                entity.HasOne(d => d.IdSubjectNavigation)
+                    .WithMany(p => p.Teachers)
+                    .HasForeignKey(d => d.IdSubject)
+                    .HasConstraintName("FK_Teachers_Subjects");
             });
 
             modelBuilder.Entity<Teaching>(entity =>

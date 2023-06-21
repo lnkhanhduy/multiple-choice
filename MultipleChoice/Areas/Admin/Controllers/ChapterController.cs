@@ -4,7 +4,7 @@ using MultipleChoice.Models;
 namespace MultipleChoice.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    /*[Authorize]*/
+    [Authorize]
     public class ChapterController : Controller
     {
         private readonly MultipleChoiceContext _context;
@@ -25,14 +25,65 @@ namespace MultipleChoice.Areas.Admin.Controllers
             return View();
         }
 
-        //Get List Chapter
+        //Get list grade
         [HttpGet]
-        public JsonResult GetListChapter(string keyword, int page)
+        public JsonResult GetListGrade()
+        {
+            try
+            {
+                var listGrade = _context.Grades.Where(x => x.IsDelete != 1).AsEnumerable().OrderBy(x => GetNumber(x.GradeName)).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách khối thành công!",
+                    data = listGrade
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách khối thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Get list subject by grade
+        [HttpGet]
+        public JsonResult GetListSubject(int gradeId)
+        {
+            try
+            {
+                var listSubject = _context.Subjects.Where(x => x.IsDelete != 1 && x.IdGrade == gradeId).AsEnumerable()
+                                    .OrderBy(x => x.SubjectName).ThenBy(x => GetNumber(x.SubjectName)).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách môn học thành công!",
+                    data = listSubject
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách môn học thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Get list chapter
+        [HttpGet]
+        public JsonResult GetListChapter(int subjectId, string keyword, int page)
         {
             try
             {
                 var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listChapterFromDB = (from _chapter in _context.Chapters.Where(x => x.IsDelete != 1)
+                var listChapterFromDB = (from _chapter in _context.Chapters.Where(x => x.IsDelete != 1 && x.IdSubject == subjectId)
                                          join _subject in _context.Subjects on _chapter.IdSubject equals _subject.Id
                                          select new
                                          {
@@ -42,8 +93,8 @@ namespace MultipleChoice.Areas.Admin.Controllers
                                              SubjectId = _chapter.IdSubject,
                                              SubjectName = _subject.SubjectName
                                          }).AsEnumerable()
-                                         .OrderBy(x => GetNumber(x.SubjectName))
-                                         .ThenBy(x => GetNumber(x.ChapterName)).ToList();
+                                         .OrderBy(x => GetNumber(x.ChapterName))
+                                         .ThenBy(x => x.ChapterName).ToList();
 
                 if (keyword != null)
                 {
@@ -69,104 +120,11 @@ namespace MultipleChoice.Areas.Admin.Controllers
                     message = "Lấy danh sách chương thất bại: " + ex.Message
                 });
             }
-
         }
 
-        //Get All Chapter
+        //Get detail chapter
         [HttpGet]
-        public JsonResult GetAllChapter()
-        {
-            try
-            {
-                var listChapter = _context.Chapters.Where(x => x.IsDelete != 1).AsEnumerable()
-                    .OrderBy(x => GetNumber(x.ChapterName)).ToList();
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách chương thành công!",
-                    data = listChapter
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách chương thất bại: " + ex.Message
-                });
-            }
-        }
-
-        [HttpGet]
-        public JsonResult GetListChapterBySubjectFilter(int id)
-        {
-            try
-            {
-                var listChapter = (from _chapter in _context.Chapters.Where(x => x.IdSubject == id && x.IsDelete != 1)
-                                   select new
-                                   {
-                                       Id = _chapter.Id,
-                                       ChapterName = _chapter.ChapterName,
-                                   }).AsEnumerable().OrderBy(x => GetNumber(x.ChapterName)).ToList();
-
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách chương thành công!",
-                    data = listChapter
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách chương thất bại: " + ex.Message
-                });
-            }
-        }
-
-        [HttpGet]
-        public JsonResult GetListChapterBySubject(int id, int page)
-        {
-            try
-            {
-                var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listChapterFromDB = (from _chapter in _context.Chapters.Where(x => x.IdSubject == id && x.IsDelete != 1)
-                                         join _subject in _context.Subjects on _chapter.IdSubject equals _subject.Id
-                                         select new
-                                         {
-                                             Id = _chapter.Id,
-                                             ChapterName = _chapter.ChapterName,
-                                             SubjectId = _chapter.IdSubject,
-                                             SubjectName = _subject.SubjectName,
-                                             Meta = _chapter.Meta,
-                                         }).AsEnumerable().OrderBy(x => GetNumber(x.ChapterName)).ToList();
-
-                var pageSize = listChapterFromDB.Count % settingsPages == 0 ? listChapterFromDB.Count / settingsPages : listChapterFromDB.Count / settingsPages + 1;
-                var listChapter = listChapterFromDB.Skip((page - 1) * settingsPages)
-                                    .Take(settingsPages).ToList();
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách chương thành công!",
-                    pageSize,
-                    data = listChapter
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách chương thất bại: " + ex.Message
-                });
-            }
-        }
-
-        //Get Detail
-        [HttpGet]
-        public JsonResult GetDetail(int id)
+        public JsonResult GetDetailChapter(int id)
         {
             try
             {
@@ -189,7 +147,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Add Chapter
+        //Add chapter
         [HttpPost]
         public JsonResult AddChapter(int subjectId, string chapterName, string chapterMeta)
         {
@@ -219,22 +177,30 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Update Chapter
+        //Update chapter
         [HttpPost]
         public JsonResult UpdateChapter(int id, int subjectId, string chapterName, string chapterMeta)
         {
             try
             {
-                //Find chapter by id
                 var _chapter = _context.Chapters.SingleOrDefault(x => x.Id == id);
 
-                //Set new value chapter
-                _chapter.IdSubject = subjectId;
-                _chapter.ChapterName = chapterName;
-                _chapter.Meta = chapterMeta;
+                if (_chapter != null)
+                {
+                    _chapter.IdSubject = subjectId;
+                    _chapter.ChapterName = chapterName;
+                    _chapter.Meta = chapterMeta;
 
-                //Save data
-                _context.SaveChanges();
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy chương",
+                    });
+                }
 
                 return Json(new
                 {
@@ -252,18 +218,28 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Delete Chapter
+        //Delete chapter
         [HttpPost]
         public JsonResult DeleteChapter(int id)
         {
             try
             {
-                //Find chapter by id
                 var _chapter = _context.Chapters.SingleOrDefault(x => x.Id == id);
-                _chapter.IsDelete = 1;
 
-                //Save data
-                _context.SaveChanges();
+                if (_chapter != null)
+                {
+                    _chapter.IsDelete = 1;
+
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy chương",
+                    });
+                }
 
                 return Json(new
                 {

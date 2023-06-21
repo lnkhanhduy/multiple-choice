@@ -1,17 +1,18 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Nhập học";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
 <div class="row">
     <div class="form-group col-sm-2">
         <select class="form-select" id="enrollSelectGrade">
+            <option value='-1' selected>Chọn khối</option>
         </select>
     </div>
 
     <div class="form-group col-sm-2">
         <select class="form-select" id="enrollSelectClass">
-            <option value='-1' selected>Chưa chọn khối</option>
+            <option value='-1' selected>Chọn lớp</option>
         </select>
     </div>
 
@@ -87,7 +88,6 @@
                         <div class="col-sm-6">
                             <nav aria-label="...">
                                 <ul class="pagination pagination-sm" id="paginationTable">
-                                    <li>1</li>
                                 </ul>
                             </nav>
                         </div>
@@ -163,21 +163,17 @@
             LoadListEnroll(keyword, page);
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-            LoadListEnroll(keyword, page);
+        //Load list class when grade change
+        $('#enrollSelectGrade').on('change', function () {
+            LoadListClass(this.value);
+        });
+
+        //Load list student when change year
+        $('#enrollSelectYear').on('change', function () {
+            LoadListEnroll(keyword, page)
         })
 
-        //Click page of pagination on table
-        $('#paginationTable').on('click', 'li', function (e) {
-            e.preventDefault();
-            pageTable = $(this).text();
-            LoadListNotEnroll(keywordTable, pageTable);
-        })
-
-        //Load Year
+        //Load year
         function LoadYear() {
             let year = new Date().getFullYear();
             $('#enrollSelectYear').empty();
@@ -187,21 +183,10 @@
             }
         };
 
-        //Load List Class By Id Grade
-        $('#enrollSelectGrade').on('change', function () {
-            LoadListClassByGrade(this.value);
-        });
-
-        //Load List Student On Change Value Year
-        $('#enrollSelectYear').on('change', function () {
-            LoadListEnroll(keyword, page)
-        })
-
-        //Load List Grade
+        //Load list grade
         function LoadListGrade() {
-            //use ajax to load list grade
             $.ajax({
-                url: "/admin/grade/GetAllGrade",
+                url: "/admin/enroll/GetListGrade",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
@@ -216,16 +201,16 @@
             })
         };
 
-        //Load List Class By Id Grade
-        function LoadListClassByGrade(id) {
+        //Load list class by grade id
+        function LoadListClass(id) {
             if (id == -1) {
                 $('#enrollSelectClass').empty();
                 $('#enrollSelectClass').append("<option value='-1' selected>Chưa chọn khối</option>");
                 return;
             }
-            //use ajax to load list class
+
             $.ajax({
-                url: "/admin/class/GetListClassByGrade",
+                url: "/admin/enroll/GetListClass",
                 type: "get",
                 data: {
                     id
@@ -243,7 +228,7 @@
             })
         };
 
-        //Load List Student Enroll
+        //Load list student enrolled
         function LoadListEnroll(keyword, page) {
             //use ajax to load list enroll
             let year = $('#enrollSelectYear').val();
@@ -290,11 +275,11 @@
             })
         };
 
-        //Load List Student Not Enroll
+        //Load list student not enroll
         function LoadListNotEnroll(keyword, page) {
             //use ajax to load list student not enroll
             $.ajax({
-                url: "/admin/enroll/GetStudentNotEnrollByClass",
+                url: "/admin/enroll/GetListNotEnroll",
                 type: "get",
                 data: {
                     keyword,
@@ -352,11 +337,9 @@
             $('#searchTable').val('');
             LoadListNotEnroll();
 
-            //show button add
             $('#btnSubmit').text('Xác nhận');
             $('#btnSubmit').show();
 
-            //show modal
             $('#modalEnroll').modal('show');
         });
 
@@ -364,7 +347,6 @@
         function Enroll(studentId) {
             let classId = $('#enrollSelectClass').val();
 
-            //Use ajax enroll
             $.ajax({
                 url: '/admin/enroll/Enroll',
                 type: 'post',
@@ -374,8 +356,6 @@
                 },
                 success: function (data) {
                     if (data.code == 200) {
-                        alert(data.message);
-
                         LoadListEnroll(keyword, page);
                         $('#modalEnroll').modal('hide');
                     }
@@ -439,6 +419,20 @@
                 pageTable = 1;
                 LoadListNotEnroll(keywordTable, pageTable)
             }
+        })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListEnroll(keyword, page);
+        })
+
+        //Click page of pagination on table
+        $('#paginationTable').on('click', 'li', function (e) {
+            e.preventDefault();
+            pageTable = $(this).text();
+            LoadListNotEnroll(keywordTable, pageTable);
         })
     </script>
 }

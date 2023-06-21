@@ -20,34 +20,33 @@
                 <div class="collapse navbar-collapse" style="margin-left:100px" id="navbarScroll">
                     <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
                         <li class="nav-item">
-                            <a class="nav-link" aria-current="page" href="/admin/adminhome/index">Trang chủ</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">View</a>
+                            <a class="nav-link" aria-current="page" href="/admin">Trang chủ</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
-                                Danh mục
+                                Quản lý khối/lớp
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
                                 <li>
-                                    <a class="dropdown-item" href="/admin/class">
-                                        Lớp
+                                    <a class="dropdown-item" href="/admin/grade">
+                                        Danh sách khối
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="/admin/subject">
-                                        Môn học
+                                    <a class="dropdown-item" href="/admin/class">
+                                        Danh sách lớp
                                     </a>
                                 </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
+                                Quản lý giáo viên
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
                                 <li>
                                     <a class="dropdown-item" href="/admin/teacher">
-                                        Giáo viên
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="/admin/student">
-                                        Học sinh
+                                        Danh sách giáo viên
                                     </a>
                                 </li>
                                 <li>
@@ -55,69 +54,68 @@
                                         Giảng dạy
                                     </a>
                                 </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
+                                Quản lý học sinh
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="/admin/student">
+                                        Danh sách học sinh
+                                    </a>
+                                </li>
                                 <li>
                                     <a class="dropdown-item" href="/admin/enroll">
                                         Nhập học
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
+                                Quản lý môn học
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="/admin/subject">
+                                        Danh sách môn học
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="/admin/chapter">
-                                        Chương
+                                        Danh sách chương
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="/admin/lesson">
-                                        Bài
-                                    </a>
-                                </li>
-                            </ul>
-                            @*                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
-                            @foreach (var item in ViewBag.Grades)
-                            {
-                            <li class="dropend">
-                            <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            @item.GradeName
-                            </a>
-                            <ul class="dropdown-menu">
-                            @foreach (var itemSubject in ViewBag.Subjects)
-                            {
-                            if (itemSubject.IdGrade == item.Id)
-                            {
-                            <li>
-                            <a class="dropdown-item" href="#">
-                            @itemSubject.SubjectName
-                            </a>
-                            </li>
-                            }
-
-                            }
-
-
-                            </ul>
-                            </li>
-                            }
-                            </ul>*@
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
-                                Chức năng
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
-                                <li>
-                                    <a class="dropdown-item" href="/admin/enroll">
-                                        Nhập học
+                                        Danh sách bài
                                     </a>
                                 </li>
                             </ul>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Link</a>
+                            <a class="nav-link" href="/admin/setting">Cấu hình</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
+                                Tài khoản
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="#" id="btnChangePassword">
+                                        Đổi mật khẩu
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/admin/default/logout">
+                                        Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
-                    <form class="d-flex">
-                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                        <button class="btn btn-outline-success" type="submit">Search</button>
-                    </form>
                 </div>
             </div>
         </nav>
@@ -128,18 +126,85 @@
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     Quản trị hệ thống
+                    <i class="fa-solid fa-chevron-right"></i>
+                    @ViewData["Title"]
                 </div>
                 <div class="card-body">
                     @RenderBody()
                 </div>
             </div>
-
         </main>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="modalChangePassword">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="card">
+                    <h5 class="card-header" id="modalTitle">Đổi mật khẩu</h5>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="control-label">Mật khẩu mới</label>
+                            <input type="password" class="form-control" id="passwordAdmin" placeholder="Mật khẩu mới" />
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Nhập lại mật khẩu mới</label>
+                            <input type="password" class="form-control" id="confirmPassword" placeholder="Nhập lại mật khẩu mới" />
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="button" class="btn btn-success" id="btnSubmitChangePassword">Đổi mật khẩu</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        $('#btnChangePassword').click(function (e) {
+            e.preventDefault();
+            $('#passwordAdmin').val('');
+            $('#confirmPassword').val('');
+            $('#modalChangePassword').modal('show');
+        })
+
+        $('#btnSubmitChangePassword').click(function () {
+            let password = $('#passwordAdmin').val().trim();
+            let confirmPassword = $('#confirmPassword').val().trim();
+
+            if (password.length == 0 || confirmPassword.length == 0) {
+                alert('Vui lòng nhập đầy đủ dữ liệu!');
+                return;
+            } else if (password.length < 6 || confirmPassword.length < 6) {
+                alert('Mật khẩu tối thiểu 6 ký tự!');
+                return;
+            }
+            else if (password.length !== confirmPassword.length) {
+                alert('Mât khẩu không trùng khớp!');
+                return;
+            }
+
+            $.ajax({
+                url: "/admin/default/ChangePassword",
+                type: "post",
+                data: {
+                    password
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#modalChangePassword').modal('hide');
+                        alert(data.message)
+                    }
+                    else {
+                        alert(data.message)
+                    }
+                }
+            })
+        })
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

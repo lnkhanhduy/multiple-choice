@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách học sinh";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -101,23 +101,15 @@
 
 @section Scripts{
     <script>
-        var keyword = '';
-        var page = 1;
+        let keyword = '';
+        let page = 1;
 
         $(document).ready(function () {
             LoadListStudent(keyword, page);
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-            LoadListStudent(keyword, page);
-        })
-
         //Load List Student
         function LoadListStudent(keyword, page) {
-            //use ajax to load list student
             $.ajax({
                 url: "/admin/student/GetListStudent",
                 type: "get",
@@ -163,53 +155,7 @@
             })
         };
 
-        //Get Detail
-        $(document).on('click', "button[name='view']", function () {
-            let id = $(this).closest('tr').attr('id');
-            let birthday = $(`tr#${id} td.birthday`).text();
-
-            $.ajax({
-                url: '/admin/student/GetDetail',
-                type: "get",
-                data: {
-                    id
-                },
-                success: function (data) {
-                    if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Chi tiết học sinh");
-
-                        //set value input
-                        $('#studentId').val(data.data.idStudent);
-                        $('#password').val(data.data.password);
-                        $('#studentName').val(data.data.studentName);
-                        $('#phone').val(data.data.phone);
-                        $('#email').val(data.data.email);
-                        $('#address').val(data.data.address);
-                        $('#birthday').val(FormatDate(birthday));
-
-                        //readonly input
-                        $('#studentId').prop('readonly', true);
-                        $('#password').prop('readonly', true);
-                        $('#studentName').prop('readonly', true);
-                        $('#phone').prop('readonly', true);
-                        $('#email').prop('readonly', true);
-                        $('#address').prop('readonly', true);
-                        $('#birthday').prop('readonly', true);
-
-                        //hidden button add
-                        $('#btnSubmit').hide();
-
-                        //show modal
-                        $('#modalStudent').modal('show');
-                    } else {
-                        alert(data.message);
-                    }
-                }
-            })
-        });
-
-        //Add Student
+        //Show modal add student
         $('#btnAdd').click(function () {
             $('#modalTitle').text("Thêm học sinh");
 
@@ -238,30 +184,62 @@
             $('#modalStudent').modal('show');
         });
 
-        //Format date
-        function FormatDate(date) {
-            let dateParts = date.split("/");
-            let formattedDate = dateParts[2] + "-" + dateParts[1].padStart(2, '0') + "-" + dateParts[0].padStart(2, '0');
-            return formattedDate;
-        }
-
-        //Update Student
-        $(document).on('click', "button[name='update']", function () {
+        //Show modal detail student
+        $(document).on('click', "button[name='view']", function () {
             let id = $(this).closest('tr').attr('id');
             let birthday = $(`tr#${id} td.birthday`).text();
 
             $.ajax({
-                url: '/admin/student/GetDetail',
+                url: '/admin/student/GetDetailStudent',
                 type: "get",
                 data: {
                     id
                 },
                 success: function (data) {
                     if (data.code == 200) {
-                        //set title
+                        $('#modalTitle').text("Chi tiết học sinh");
+
+                        $('#studentId').val(data.data.idStudent);
+                        $('#password').val(data.data.password);
+                        $('#studentName').val(data.data.studentName);
+                        $('#phone').val(data.data.phone);
+                        $('#email').val(data.data.email);
+                        $('#address').val(data.data.address);
+                        $('#birthday').val(FormatDate(birthday));
+
+                        $('#studentId').prop('readonly', true);
+                        $('#password').prop('readonly', true);
+                        $('#studentName').prop('readonly', true);
+                        $('#phone').prop('readonly', true);
+                        $('#email').prop('readonly', true);
+                        $('#address').prop('readonly', true);
+                        $('#birthday').prop('readonly', true);
+
+                        $('#btnSubmit').hide();
+
+                        $('#modalStudent').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Show modal update student
+        $(document).on('click', "button[name='update']", function () {
+            let id = $(this).closest('tr').attr('id');
+            let birthday = $(`tr#${id} td.birthday`).text();
+
+            $.ajax({
+                url: '/admin/student/GetDetailStudent',
+                type: "get",
+                data: {
+                    id
+                },
+                success: function (data) {
+                    if (data.code == 200) {
                         $('#modalTitle').text("Cập nhật thông tin học sinh");
 
-                        //set value input
                         $('#id').val(id);
                         $('#studentId').val(data.data.idStudent);
                         $('#password').val(data.data.password);
@@ -271,7 +249,6 @@
                         $('#address').val(data.data.address);
                         $('#birthday').val(FormatDate(birthday));
 
-                        //readonly input
                         $('#studentId').prop('readonly', true);
                         $('#password').prop('readonly', false);
                         $('#studentName').prop('readonly', false);
@@ -280,11 +257,9 @@
                         $('#address').prop('readonly', false);
                         $('#birthday').prop('readonly', false);
 
-                        //show button add
-                        $('#btnSubmit').text('Lưu');
+                        $('#btnSubmit').text('Cập nhật');
                         $('#btnSubmit').show();
 
-                        //show modal
                         $('#modalStudent').modal('show');
                     } else {
                         alert(data.message);
@@ -293,7 +268,7 @@
             })
         });
 
-        //Delete Student
+        //Delete student
         $(document).on('click', "button[name='delete']", function () {
             let id = $(this).closest('tr').attr('id');
 
@@ -318,7 +293,7 @@
 
         });
 
-        //Submit Modal
+        //Submit modal
         $('#btnSubmit').click(function () {
             let id = $('#id').val();
             let studentId = $('#studentId').val();
@@ -343,8 +318,7 @@
                 return;
             }
 
-            if (id.length == 0) {
-                //Use ajax add student
+            if (id.length == 0) { //Add student
                 $.ajax({
                     url: '/admin/student/AddStudent',
                     type: 'post',
@@ -377,8 +351,7 @@
                     }
                 })
             }
-            else {
-                //Use ajax update student
+            else { //Update student
                 $.ajax({
                     url: '/admin/student/UpdateStudent',
                     type: 'post',
@@ -396,6 +369,8 @@
                             alert(data.message);
 
                             $('#modalStudent').modal('hide');
+
+                            page = 1;
                             LoadListStudent(keyword, page);
                         }
                         else {
@@ -414,17 +389,32 @@
             if (keyword.length == 0) {
                 return;
             }
+
             page = 1;
             LoadListStudent(keyword, page)
         })
 
         //Reload list student input null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
                 LoadListStudent(keyword, page);
             }
         })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListStudent(keyword, page);
+        })
+
+        //Format date
+        function FormatDate(date) {
+            let dateParts = date.split("/");
+            let formattedDate = dateParts[2] + "-" + dateParts[1].padStart(2, '0') + "-" + dateParts[0].padStart(2, '0');
+            return formattedDate;
+        }
     </script>
 }

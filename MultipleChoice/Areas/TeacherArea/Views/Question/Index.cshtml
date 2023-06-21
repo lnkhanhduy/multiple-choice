@@ -1,17 +1,17 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách câu hỏi";
     Layout = "~/Areas/TeacherArea/Views/Shared/_TeacherLayout.cshtml";
 }
 
 <div class="row">
     <div class="form-group col-sm-2">
-        <select class="form-select" id="questionSelectGradeFilter">
+        <select class="form-select" id="questionSelectGrade">
             <option value="-1">Chọn khối</option>
         </select>
     </div>
 
     <div class="form-group col-sm-2">
-        <select class="form-select" id="questionSelectSubjectFilter">
+        <select class="form-select" id="questionSelectSubject">
             <option value="-1">Chọn môn</option>
         </select>
     </div>
@@ -23,7 +23,14 @@
         </button>
     </div>
 
-    <div class="col-sm-3 offset-sm-2 mb-2">
+    <div class="col-sm-2 mb-2">
+        <button class="btn btn-success" id="btnApprove">
+            <i class="fa-solid fa-check"></i>
+            Phê duyệt câu hỏi
+        </button>
+    </div>
+
+    <div class="col-sm-3 mb-2">
         <form id="formSearch">
             <div class="input-group">
                 <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
@@ -52,6 +59,24 @@
                 <th>
                     Câu hỏi
                 </th>
+                <th>
+                    Người tạo
+                </th>
+                <th>
+                    Ngày tạo
+                </th>
+                <th>
+                    Người sửa
+                </th>
+                <th>
+                    Ngày sửa
+                </th>
+                <th class="text-center">
+                    Đã duyệt
+                </th>
+                <th>
+                    Người duyệt
+                </th>
                 <th></th>
             </tr>
         </thead>
@@ -68,25 +93,13 @@
                 <div class="card-body">
                     <input hidden id="questionId" value="" />
                     <div class="row">
-                        <div class="form-group col-sm-2">
-                            <label class="control-label">Khối</label>
-                            <select class="form-select" id="questionSelectGrade">
-                                <option value="-1">Chọn khối</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-sm-2">
-                            <label class="control-label">Môn</label>
-                            <select class="form-select" id="questionSelectSubject">
-                                <option value="-1">Chọn môn</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-sm-4">
+                        <div class="form-group col-sm-6">
                             <label class="control-label">Chương</label>
                             <select class="form-select" id="questionSelectChapter">
                                 <option value="-1">Chọn chương</option>
                             </select>
                         </div>
-                        <div class="form-group col-sm-4">
+                        <div class="form-group col-sm-6">
                             <label class="control-label">Bài</label>
                             <select class="form-select" id="questionSelectLesson">
                                 <option value="-1">Chọn bài</option>
@@ -139,40 +152,80 @@
         </div>
     </div>
 </div>
-</div>
 
+<div class="modal fade" tabindex="-1" role="dialog" id="modalApprove">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalApproveTitle">Phê duyệt câu hỏi</h5>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        STT
+                                    </th>
+                                    <th>
+                                        Câu hỏi
+                                    </th>
+                                    <th>
+                                        Đáp án A
+                                    </th>
+                                    <th>
+                                        Đáp án B
+                                    </th>
+                                    <th>
+                                        Đáp án C
+                                    </th>
+                                    <th>
+                                        Đáp án D
+                                    </th>
+                                    <th>
+                                        Đáp án
+                                    </th>
+                                    <th>
+                                        Mức độ khó
+                                    </th>
+                                    <th>
+                                        Ghi chú
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tBodyListQuestionNotApprove">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="button" class="btn btn-success" id="btnApproveSubmit">Xác nhận</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 @section Scripts{
     <script>
-        var keyword = '';
-        var page = 1;
+        let keyword = '';
+        let page = 1;
 
         $(document).ready(function () {
+            $('#btnApprove').hide()
             LoadListGrade();
             LoadListLevel();
             LoadListAnswer();
-            LoadListQuestion(keyword, page);
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-            if ($('#questionSelectSubjectFilter').val() != -1) {
-                LoadListQuestionBySubject($('#questionSelectSubjectFilter').val(), page);
-            }
-            else {
-                LoadListQuestion(keyword, page);
-            }
-        })
-
-        //Load List Subject When Grade Change
+        //Load list subject when grade change
         $('#questionSelectGrade').on('change', function () {
             if ($('#questionSelectGrade').val() == -1) {
-                page = 1;
-                LoadListQuestion(keyword, page);
+                $('#tBodyListQuestion').empty();
             }
+
             $("#search").val('');
             $('#questionSelectSubject').empty();
             $('#questionSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
@@ -181,65 +234,32 @@
             $('#questionSelectLesson').empty();
             $('#questionSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
 
-            $('#questionSelectGradeFilter').val($('#questionSelectGrade').val())
             LoadListSubject($('#questionSelectGrade').val());
         });
 
-        //Load List Subject When Grade Filter Change
-        $('#questionSelectGradeFilter').on('change', function () {
-            if ($('#questionSelectGradeFilter').val() == -1) {
-                page = 1;
-                LoadListQuestion(keyword, page);
-            }
-
-            $("#search").val('');
-            $('#questionSelectSubjectFilter').empty();
-            $('#questionSelectSubjectFilter').append("<option value='-1' selected>Chọn môn</option>");
-            LoadListSubject($('#questionSelectGradeFilter').val());
-        });
-
-        //Load List Question When Subject Filter Change
-        $('#questionSelectSubjectFilter').on('change', function () {
-            page = 1;
-            if ($('#questionSelectSubjectFilter').val() != -1) {
-                LoadListQuestionBySubject($('#questionSelectSubjectFilter').val(), page);
-            }
-            else {
-                LoadListQuestion(keyword, page);
-            }
-        });
-
-        //Load List Chapter When Subject Change
+        //Load list chapter when subject change
         $('#questionSelectSubject').on('change', function () {
-            page = 1;
-            if ($('#questionSelectSubject').val() != -1) {
-                LoadListQuestionBySubject($('#questionSelectSubject').val(), page);
-            }
-            else {
-                LoadListQuestion(keyword, page);
-            }
             $('#questionSelectChapter').empty();
             $('#questionSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
             $('#questionSelectLesson').empty();
             $('#questionSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
-            $('#questionSelectSubjectFilter').val($('#questionSelectSubject').val())
 
-            LoadListChapter();
+            LoadListChapter($('#questionSelectSubject').val());
+            LoadListQuestion(keyword, page);
         });
 
-        //Load List Lesson Select Chapter Change
+        //Load list question when chapter change
         $('#questionSelectChapter').on('change', function () {
             $('#questionSelectLesson').empty();
             $('#questionSelectLesson').append("<option value='-1' selected>Chọn bài</option>");
 
-            LoadListLesson();
+            LoadListLesson($('#questionSelectChapter').val());
         });
 
-        //Load List Grade
+        //Load list grade
         function LoadListGrade() {
-            //use ajax to load list grade
             $.ajax({
-                url: "/teacherarea/question/GetAllGrade",
+                url: "/teacherarea/question/GetListGrade",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
@@ -249,24 +269,17 @@
                             let option = `<option value=${item.id}>${item.gradeName}</option>`;
                             $('#questionSelectGrade').append(option);
                         })
-
-                        $('#questionSelectGradeFilter').empty();
-                        $('#questionSelectGradeFilter').append("<option value='-1' selected>Chọn khối</option>");
-                        $.each(data.data, function (index, item) {
-                            let option = `<option value=${item.id}>${item.gradeName}</option>`;
-                            $('#questionSelectGradeFilter').append(option);
-                        })
                     }
                 }
             })
         };
 
-        //Load List Subject
+        //Load list subject
         function LoadListSubject(id) {
             return new Promise(function (resolve, reject) {
                 if (id != -1) {
                     $.ajax({
-                        url: "/teacherarea/question/GetListSubjectByGrade",
+                        url: "/teacherarea/question/GetListSubject",
                         type: "get",
                         data: {
                             id
@@ -299,15 +312,15 @@
             })
         };
 
-        //Load List Chapter
-        function LoadListChapter() {
+        //Load list chapter
+        function LoadListChapter(id) {
             return new Promise(function (resolve, reject) {
-                if ($('#questionSelectSubject').val() != -1) {
+                if (id != -1) {
                     $.ajax({
-                        url: "/teacherarea/question/GetListChapterBySubject",
+                        url: "/teacherarea/question/GetListChapter",
                         type: "get",
                         data: {
-                            id: $('#questionSelectSubject').val()
+                            id
                         },
                         success: function (data) {
                             if (data.code === 200) {
@@ -330,15 +343,15 @@
             })
         };
 
-        //Load List Lesson
-        function LoadListLesson() {
+        //Load list lesson
+        function LoadListLesson(id) {
             return new Promise(function (resolve, reject) {
-                if ($('#questionSelectChapter').val() != -1) {
+                if (id != -1) {
                     $.ajax({
-                        url: "/teacherarea/question/GetListLessonByChapter",
+                        url: "/teacherarea/question/GetListLesson",
                         type: "get",
                         data: {
-                            id: $('#questionSelectChapter').val()
+                            id
                         },
                         success: function (data) {
                             if (data.code === 200) {
@@ -361,7 +374,7 @@
             })
         };
 
-        //Load List Level
+        //Load list level
         function LoadListLevel() {
             //use ajax to load list lesson
             $.ajax({
@@ -380,7 +393,7 @@
             })
         }
 
-        //Load List Answer
+        //Load list answer
         function LoadListAnswer() {
             //use ajax to load list lesson
             $.ajax({
@@ -399,32 +412,46 @@
             })
         }
 
-        //Load List Question
+        //Load list question
         function LoadListQuestion(keyword, page) {
-            //use ajax to load list class
             $.ajax({
                 url: "/teacherarea/question/GetListQuestion",
                 type: "get",
                 data: {
+                    subjectId: $('#questionSelectSubject').val(),
                     keyword,
                     page
                 },
                 success: function (data) {
                     if (data.code === 200) {
+                        if (data.isLeader) {
+                            $('#btnApprove').show()
+                        }
+                        else {
+                            $('#btnApprove').hide()
+                        }
+
                         $('#tBodyListQuestion').empty();
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id=${item.id}>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-9">${item.questionContent}</td>`;
-                            tr += '<td class="col-sm-2 text-end">';
-                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
-                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
-                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += `<td>${index + 1}</td>`;
+                            tr += `<td class="text-primary fw-bold">${item.questionContent}</td>`;
+                            tr += `<td>${item.author}</td>`;
+                            tr += `<td>${item.creationDate != null ? ConvertDate(item.creationDate) : ''}</td>`;
+                            tr += `<td>${item.editor != null ? item.editor : ''}</td>`;
+                            tr += `<td>${item.editingDate != null ? ConvertDate(item.editingDate) : ''}</td>`;
+                            tr += `<td class="text-center">${item.isApprove == 1 ? '<i class="fa-solid fa-circle-check text-success"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'}</td>`;
+                            tr += `<td>${item.approver != null ? item.approver : ''}</td>`;
+                            tr += '<td class="text-end">';
+                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button>';
+                            tr += item.isApprove != 1 ? ' | <button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ' : '';
+                            tr += item.isApprove != 1 ? '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>' : '';
                             tr += "</td>";
                             tr += "</tr>";
 
                             $('#tBodyListQuestion').append(tr);
                         })
+
                         if (data.pageSize > 1) {
                             $('#pagination').empty();
                             for (var i = 1; i <= data.pageSize; i++) {
@@ -442,76 +469,55 @@
             })
         };
 
-        //Load List Question By Subject
-        function LoadListQuestionBySubject(id, page) {
-            //use ajax to load list class
+        //Load list question not approve
+        function LoadListQuestionNotApproveBySubject(id) {
             $.ajax({
-                url: "/teacherarea/question/GetListQuestionBySubject",
+                url: "/teacherarea/question/GetListQuestionNotAppoveBySubject",
                 type: "get",
                 data: {
                     id,
-                    page
                 },
                 success: function (data) {
                     if (data.code === 200) {
-                        $('#tBodyListQuestion').empty();
+                        $('#tBodyListQuestionNotApprove').empty();
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id=${item.id}>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-9">${item.questionContent}</td>`;
-                            tr += '<td class="col-sm-2 text-end">';
-                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
-                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
-                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
-                            tr += "</td>";
+                            tr += `<td>${index + 1}</td>`;
+                            tr += `<td class="text-primary fw-bold">${item.questionContent}</td>`;
+                            tr += `<td>${item.answerA}</td>`;
+                            tr += `<td>${item.answerB}</td>`;
+                            tr += `<td>${item.answerC}</td>`;
+                            tr += `<td>${item.answerD}</td>`;
+                            tr += `<td>${item.answer}</td>`;
+                            tr += `<td>${item.level}</td>`;
+                            tr += `<td>${item.note != null ? item.note : ''} </td>`;
+                            tr += `<td><input type="checkbox"/></td>`;
                             tr += "</tr>";
 
-                            $('#tBodyListQuestion').append(tr);
+                            $('#tBodyListQuestionNotApprove').append(tr);
                         })
-                        if (data.pageSize > 1) {
-                            $('#pagination').empty();
-                            for (var i = 1; i <= data.pageSize; i++) {
-                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
-                                $('#pagination').append(li);
-                            }
-                            let li = $(`#pagination li#${page}`);
-                            $(li).addClass('active');
-                        }
-                        else {
-                            $('#pagination').empty();
-                        }
                     }
                 }
             })
         };
 
-        //Get Detail
+        //Show modal detail question
         $(document).on('click', "button[name='view']", function () {
             let questionId = $(this).closest('tr').attr('id');
 
             $.ajax({
-                url: '/teacherarea/question/GetDetail',
+                url: '/teacherarea/question/GetDetailQuestion',
                 type: "get",
                 data: {
                     id: questionId
                 },
                 success: function (data) {
                     if (data.code == 200) {
-                        console.log(data)
-                        //set title
-                        $('#modalTitle').text("Chi tiết lớp");
-                        //set value input
-                        $('#questionSelectGrade').val(data.data[0].gradeId);
+                        $('#modalTitle').text("Chi tiết câu hỏi");
 
-                        LoadListSubject(data.data[0].gradeId).then(function () {
-                            $('#questionSelectSubject').val(data.data[0].subjectId);
-                        }).then(function () {
-                            return LoadListChapter();
-                        }).then(function () {
-                            $('#questionSelectChapter').val(data.data[0].chapterId);
-                        }).then(function () {
-                            return LoadListLesson();
-                        }).then(function () {
+                        $('#questionSelectChapter').val(data.data[0].chapterId);
+
+                        LoadListLesson(data.data[0].chapterId).then(function () {
                             $('#questionSelectLesson').val(data.data[0].lessonId);
                         });
 
@@ -524,7 +530,6 @@
                         $('#questionSelectAnswer').val(data.data[0].answer);
                         $('#note').val(data.data[0].note);
 
-                        //readonly input
                         $('#questionContent').prop('readonly', true);
                         $('#answerA').prop('readonly', true);
                         $('#answerB').prop('readonly', true);
@@ -532,10 +537,8 @@
                         $('#answerD').prop('readonly', true);
                         $('#note').prop('readonly', true);
 
-                        //hidden button add
                         $('#btnSubmit').hide();
 
-                        //show modal
                         $('#modalQuestion').modal('show');
                     } else {
                         alert(data.message);
@@ -544,14 +547,91 @@
             })
         });
 
-        //Add Question
+        //Show modal update question
+        $(document).on('click', "button[name='update']", function () {
+            let questionId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/teacherarea/question/GetDetailQuestion',
+                type: "get",
+                data: {
+                    id: questionId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#modalTitle').text("Cập nhật câu hỏi");
+
+                        $('#questionSelectChapter').val(data.data[0].chapterId)
+                        LoadListLesson(data.data[0].chapterId).then(function () {
+                            $('#questionSelectLesson').val(data.data[0].lessonId);
+                        });
+
+                        $('#questionId').val(questionId);
+                        $('#questionContent').val(data.data[0].questionContent);
+                        $('#answerA').val(data.data[0].answerA);
+                        $('#answerB').val(data.data[0].answerB);
+                        $('#answerC').val(data.data[0].answerC);
+                        $('#answerD').val(data.data[0].answerD);
+                        $('#questionSelectLevel').val(data.data[0].level);
+                        $('#questionSelectAnswer').val(data.data[0].answer);
+                        $('#note').val(data.data[0].note);
+
+                        $('#questionContent').prop('readonly', false);
+                        $('#answerA').prop('readonly', false);
+                        $('#answerB').prop('readonly', false);
+                        $('#answerC').prop('readonly', false);
+                        $('#answerD').prop('readonly', false);
+                        $('#note').prop('readonly', false);
+
+                        $('#btnSubmit').text('Cập nhật');
+                        $('#btnSubmit').show();
+
+                        $('#modalQuestion').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Delete question
+        $(document).on('click', "button[name='delete']", function () {
+            let questionId = $(this).closest('tr').attr('id');
+
+            if (confirm("Bạn có chắc muốn xóa câu hỏi này?")) {
+                $.ajax({
+                    url: '/teacherarea/question/DeleteQuestion',
+                    type: "post",
+                    data: {
+                        id: questionId
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            page = 1;
+                            LoadListQuestion(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+
+        //Show modal approve question
+        $('#btnApprove').click(function () {
+            LoadListQuestionNotApproveBySubject($('#questionSelectSubject').val())
+
+            $('#modalApprove').modal('show');
+        });
+
+        //Show modal add question
         $('#btnAdd').click(function () {
             $('#modalTitle').text("Thêm câu hỏi");
 
             $('#questionId').val('');
-            $('#questionSelectGrade').val($('#questionSelectGradeFilter').val());
-            $('#questionSelectSubject').val($('#questionSelectSubjectFilter').val());
-            LoadListChapter($('#questionSelectSubjectFilter').val());
             $('#questionSelectLesson').val(-1);
             $('#questionContent').val('');
             $('#answerA').val('');
@@ -569,100 +649,13 @@
             $('#answerD').prop('readonly', false);
             $('#note').prop('readonly', false);
 
-            //show button add
             $('#btnSubmit').text('Thêm');
             $('#btnSubmit').show();
 
-            //show modal
             $('#modalQuestion').modal('show');
         });
 
-        //Update Class
-        $(document).on('click', "button[name='update']", function () {
-            let questionId = $(this).closest('tr').attr('id');
-
-            $.ajax({
-                url: '/teacherarea/question/GetDetail',
-                type: "get",
-                data: {
-                    id: questionId
-                },
-                success: function (data) {
-                    if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Cập nhật câu hỏi");
-                        //set value input
-                        $('#questionSelectGrade').val(data.data[0].gradeId);
-
-                        LoadListSubject(data.data[0].gradeId).then(function () {
-                            $('#questionSelectSubject').val(data.data[0].subjectId);
-                        }).then(function () {
-                            return LoadListChapter();
-                        }).then(function () {
-                            $('#questionSelectChapter').val(data.data[0].chapterId);
-                        }).then(function () {
-                            return LoadListLesson();
-                        }).then(function () {
-                            $('#questionSelectLesson').val(data.data[0].lessonId);
-                        });
-
-                        $('#questionId').val(questionId);
-                        $('#questionContent').val(data.data[0].questionContent);
-                        $('#answerA').val(data.data[0].answerA);
-                        $('#answerB').val(data.data[0].answerB);
-                        $('#answerC').val(data.data[0].answerC);
-                        $('#answerD').val(data.data[0].answerD);
-                        $('#questionSelectLevel').val(data.data[0].level);
-                        $('#questionSelectAnswer').val(data.data[0].answer);
-                        $('#note').val(data.data[0].note);
-
-                        //readonly input
-                        $('#questionContent').prop('readonly', false);
-                        $('#answerA').prop('readonly', false);
-                        $('#answerB').prop('readonly', false);
-                        $('#answerC').prop('readonly', false);
-                        $('#answerD').prop('readonly', false);
-                        $('#note').prop('readonly', false);
-
-                        //show button add
-                        $('#btnSubmit').text('Lưu');
-                        $('#btnSubmit').show();
-
-                        //show modal
-                        $('#modalQuestion').modal('show');
-                    } else {
-                        alert(data.message);
-                    }
-                }
-            })
-        });
-
-        //Delete Question
-        $(document).on('click', "button[name='delete']", function () {
-            let questionId = $(this).closest('tr').attr('id');
-
-            if (confirm("Bạn có chắc muốn xóa câu hỏi này?")) {
-                //Use ajax delete question
-                $.ajax({
-                    url: '/teacherarea/question/DeleteQuestion',
-                    type: "post",
-                    data: {
-                        id: questionId
-                    },
-                    success: function (data) {
-                        if (data.code == 200) {
-                            alert(data.message);
-                            LoadListQuestion(keyword, page);
-                        } else {
-                            alert(data.message);
-                        }
-                    }
-                })
-            }
-
-        });
-
-        //Submit Modal
+        //Submit modal
         $('#btnSubmit').click(function () {
             let questionId = $('#questionId').val();
             let lesson = $('#questionSelectLesson').val();
@@ -680,9 +673,7 @@
                 return;
             }
 
-
-            if (questionId.length == 0) {
-                //Use ajax add question
+            if (questionId.length == 0) { //Add question
                 $.ajax({
                     url: '/teacherarea/question/AddQuestion',
                     type: 'post',
@@ -718,8 +709,7 @@
                     }
                 })
             }
-            else {
-                //Use ajax update question
+            else { //Update question
                 $.ajax({
                     url: '/teacherarea/question/UpdateQuestion',
                     type: 'post',
@@ -740,6 +730,7 @@
                             alert(data.message);
 
                             $('#modalQuestion').modal('hide');
+
                             LoadListQuestion(keyword, page);
                         }
                         else {
@@ -750,6 +741,33 @@
             }
         })
 
+        //Submit modal approve question
+        $('#btnApproveSubmit').click(function () {
+            $('#tBodyListQuestionNotApprove > tr').each(function (index, item) {
+                if ($(this).find('input').is(':checked')) {
+                    let id = $(this).attr('id');
+
+                    $.ajax({
+                        url: '/teacherarea/question/ApproveQuestion',
+                        type: 'post',
+                        data: {
+                            id
+                        },
+                        success: function (data) {
+                            if (data.code == 200) {
+                                LoadListQuestion(keyword, page);
+                                LoadListQuestionNotApproveBySubject($('#questionSelectSubject').val());
+                            }
+                            else {
+                                alert(data.message);
+                            }
+                        }
+                    })
+                }
+            })
+            return;
+        })
+
         //Search
         $('#formSearch').submit(function (e) {
             e.preventDefault();
@@ -758,21 +776,34 @@
             if (keyword.length == 0) {
                 return;
             }
+
             page = 1;
-            $('#questionSelectGradeFilter').val(-1);
-            $('#questionSelectSubjectFilter').empty();
-            $('#questionSelectSubjectFilter').append('<option value="-1">Chọn môn</option>');
             LoadListQuestion(keyword, page)
         })
 
-        //Reload list class input null
+        //Reload list question when search null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
                 LoadListQuestion(keyword, page);
             }
         })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListQuestion(keyword, page);
+        })
+
+        //Convert Date
+        function ConvertDate(date) {
+            return new Date(date).getDate()
+                + "/" + Number(new Date(date).getMonth() + 1)
+                + "/" + new Date(date).getFullYear()
+
+        }
     </script>
-}
+    }
 

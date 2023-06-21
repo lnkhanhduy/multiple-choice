@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Giảng dạy";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -65,18 +65,21 @@
                 <div class="card-body">
                     <input hidden id="teachingId" value="" />
                     <div class="form-group">
-                        <label class="control-label">Giáo viên</label>
-                        <select class="form-select" id="teachingSelectTeacher">
+                        <label class="control-label">Môn học</label>
+                        <select class="form-select" id="subjectId">
+                            <option value='-1' selected>Chọn môn học</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="control-label">Môn học</label>
-                        <select class="form-select" id="teachingSelectSubject">
+                        <label class="control-label">Giáo viên</label>
+                        <select class="form-select" id="teacherId">
+                            <option value='-1' selected>Chọn giáo viên</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="control-label">Lớp</label>
-                        <select class="form-select" id="teachingSelectClass">
+                        <select class="form-select" id="classId">
+                            <option value='-1' selected>Chọn lớp</option>
                         </select>
                     </div>
                     <div class="row mt-2">
@@ -101,26 +104,29 @@
 
 @section Scripts{
     <script>
-        var keyword = '';
-        var page = 1;
+        let keyword = '';
+        let page = 1;
 
         $(document).ready(function () {
-            LoadListTeacher();
             LoadListSubject();
             LoadListClass();
             LoadListTeaching(keyword, page);
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-            LoadListTeaching(keyword, page);
+        //Load list teacher when subject change
+        $('#subjectId').on('change', function () {
+            if ($('#subjectId').val() == -1) {
+                $('#teacherId').empty();
+                $('#teacherId').append("<option value='-1'>Chọn giáo viên</option>")
+            }
+            else {
+
+                LoadListTeacher($('#subjectId').val());
+            }
         })
 
-        //Load List Teaching
+        //Load list teaching
         function LoadListTeaching(keyword, page) {
-            //use ajax to load list teaching
             $.ajax({
                 url: "/admin/teaching/GetListTeaching",
                 type: "get",
@@ -133,13 +139,13 @@
                         $('#tBodyListTeaching').empty();
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id=${item.id}>`;
-                            tr += `<td class="col-sm-2 teacher" data-id-teacher=${item.teacherId}>${item.teacherName}</td>`;
-                            tr += `<td class="col-sm-2 subject" data-id-subject=${item.subjectId}>${item.subjectName}</td>`;
-                            tr += `<td class="col-sm-2 class" data-id-class=${item.classId}>${item.className}</td>`;
-                            tr += '<td class="col-sm-2 startingDate">' + new Date(item.startingDate).getDate()
+                            tr += `<td class="col-sm-2">${item.teacherName}</td>`;
+                            tr += `<td class="col-sm-2">${item.subjectName}</td>`;
+                            tr += `<td class="col-sm-2">${item.className}</td>`;
+                            tr += '<td class="col-sm-2">' + new Date(item.startingDate).getDate()
                                 + "/" + Number(new Date(item.startingDate).getMonth() + 1)
                                 + "/" + new Date(item.startingDate).getFullYear() + "</td>";
-                            tr += '<td class="col-sm-2 endingDate">' + new Date(item.endingDate).getDate()
+                            tr += '<td class="col-sm-2">' + new Date(item.endingDate).getDate()
                                 + "/" + Number(new Date(item.endingDate).getMonth() + 1)
                                 + "/" + new Date(item.endingDate).getFullYear() + "</td>";
                             tr += '<td class="col-sm-2 text-end">';
@@ -169,123 +175,130 @@
             })
         };
 
-        //Load List Teacher
-        function LoadListTeacher() {
-            //use ajax to load list teacher
-            $.ajax({
-                url: "/admin/teacher/GetAllTeacher",
-                type: "get",
-                success: function (data) {
-                    if (data.code === 200) {
-                        $('#teachingSelectTeacher').empty();
-                        $('#teachingSelectTeacher').append("<option value='-1' selected>Chọn giáo viên</option>");
-                        $.each(data.data, function (index, item) {
-                            let option = `<option value=${item.id}>${item.teacherName}</option>`;
-                            $('#teachingSelectTeacher').append(option);
-                        })
+        //Load list teacher
+        function LoadListTeacher(subjectId) {
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: "/admin/teaching/GetListTeacher",
+                    type: "get",
+                    data: {
+                        subjectId,
+                    },
+                    success: function (data) {
+                        if (data.code === 200) {
+                            $('#teacherId').empty();
+                            $('#teacherId').append("<option value='-1' selected>Chọn giáo viên</option>");
+                            $.each(data.data, function (index, item) {
+                                let option = `<option value=${item.id}>${item.teacherName}</option>`;
+                                $('#teacherId').append(option);
+                            });
+                            resolve(); // Hoàn thành Promise khi danh sách giáo viên được tải và gán thành công
+                        } else {
+                            reject("Lỗi"); // Từ chối Promise nếu có lỗi trong quá trình tải danh sách
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        reject("AJAX error: " + textStatus); // Từ chối Promise nếu xảy ra lỗi AJAX
                     }
-                }
-            })
-        };
+                });
+            });
+        }
 
-        //Load List Class
+        //Load list class
         function LoadListClass() {
-            //use ajax to load list class
             $.ajax({
-                url: "/admin/class/GetAllClass",
+                url: "/admin/teaching/GetListClass",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
-                        $('#teachingSelectClass').empty();
-                        $('#teachingSelectClass').append("<option value='-1' selected>Chọn lớp giảng dạy</option>");
+                        $('#classId').empty();
+                        $('#classId').append("<option value='-1' selected>Chọn lớp</option>");
                         $.each(data.data, function (index, item) {
                             let option = `<option value=${item.id}>${item.className}</option>`;
-                            $('#teachingSelectClass').append(option);
+                            $('#classId').append(option);
                         })
                     }
                 }
             })
         };
 
-        //Load List Subject
+        //Load list subject
         function LoadListSubject() {
-            //use ajax to load list subject
             $.ajax({
-                url: "/admin/subject/GetAllSubject",
+                url: "/admin/teaching/GetListSubject",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
-                        $('#teachingSelectSubject').empty();
-                        $('#teachingSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
+                        $('#subjectId').empty();
+                        $('#subjectId').append("<option value='-1' selected>Chọn môn học</option>");
                         $.each(data.data, function (index, item) {
                             let option = `<option value=${item.id}>${item.subjectName}</option>`;
-                            $('#teachingSelectSubject').append(option);
+                            $('#subjectId').append(option);
                         })
                     }
                 }
             })
         };
 
-        //Add Teaching
+        //Show modal add Teaching
         $('#btnAdd').click(function () {
             $('#modalTitle').text("Thêm quá trình giảng dạy");
 
             $('#teachingId').val('');
-            $('#teachingSelectTeacher').val(-1);
-            $('#teachingSelectSubject').val(-1);
-            $('#teachingSelectClass').val(-1);
+            $('#teacherId').val(-1);
+            $('#subjectId').val(-1);
+            $('#classId').val(-1);
             $('#startingDate').val('');
             $('#endingDate').val('');
 
-            //show button add
             $('#btnSubmit').text('Thêm');
             $('#btnSubmit').show();
 
-            //show modal
             $('#modalTeaching').modal('show');
         });
 
-        //Format date
-        function FormatDate(date) {
-            var dateParts = date.split("/");
-            var formattedDate = dateParts[2] + "-" + dateParts[1].padStart(2, '0') + "-" + dateParts[0].padStart(2, '0');
-            return formattedDate;
-        }
-
-        //Update Teaching
+        //Show modal update teaching
         $(document).on('click', "button[name='update']", function () {
             let teachingId = $(this).closest('tr').attr('id');
-            let teacherId = $(`tr#${teachingId} td.teacher`).data('id-teacher');
-            let subjectId = $(`tr#${teachingId} td.subject`).data('id-subject');
-            let classId = $(`tr#${teachingId} td.class`).data('id-class');
-            let startingDate = $(`tr#${teachingId} td.startingDate`).text();
-            let endingDate = $(`tr#${teachingId} td.endingDate`).text();
 
-            //Set title
-            $('#modalTitle').text("Cập nhật thông tin quá trình giảng dạy");
+            $.ajax({
+                url: "/admin/teaching/GetDetailTeaching",
+                type: "get",
+                data: {
+                    id: teachingId
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        console.log(data)
+                        $('#modalTitle').text("Cập nhật thông tin quá trình giảng dạy");
 
-            //set value input
-            $('#teachingId').val(teachingId);
-            $('#teachingSelectTeacher').val(teacherId);
-            $('#teachingSelectSubject').val(subjectId);
-            $('#teachingSelectClass').val(classId);
-            $('#startingDate').val(FormatDate(startingDate));
-            $('#endingDate').val(FormatDate(endingDate));
+                        $('#teachingId').val(teachingId);
+                        $('#subjectId').val(data.data.idSubject);
+                        LoadListTeacher(data.data.idSubject).then(function () {
+                            $('#teacherId').val(data.data.idTeacher);
+                        });
+                        $('#teacherId').val(data.data.idTeacher);
+                        $('#classId').val(data.data.idClass);
+                        $('#startingDate').val(FormatDate(data.data.startingDate));
+                        $('#endingDate').val(FormatDate(data.data.endingDate));
 
-            //show button add
-            $('#btnSubmit').text('Lưu');
-            $('#btnSubmit').show();
+                        $('#btnSubmit').text('Lưu');
+                        $('#btnSubmit').show();
 
-            //show modal
-            $('#modalTeaching').modal('show');
+                        $('#modalTeaching').modal('show');
+                    }
+                    else {
+                        alert(data.message);
+                    }
+                }
+            })
         });
 
-        //Delete Teaching
+        //Delete teaching
         $(document).on('click', "button[name='delete']", function () {
             let teachingId = $(this).closest('tr').attr('id');
 
             if (confirm("Bạn có chắc muốn xóa quá trình giảng dạy này?")) {
-                //Use ajax delete teaching
                 $.ajax({
                     url: '/admin/teaching/DeleteTeaching',
                     type: "post",
@@ -295,6 +308,8 @@
                     success: function (data) {
                         if (data.code == 200) {
                             alert(data.message);
+
+                            page = 1;
                             LoadListTeaching(keyword, page);
                         } else {
                             alert(data.message);
@@ -304,12 +319,12 @@
             }
         });
 
-        //Submit Modal
+        //Submit modal
         $('#btnSubmit').click(function () {
             let teachingId = $('#teachingId').val();
-            let teacherId = $('#teachingSelectTeacher').val();
-            let subjectId = $('#teachingSelectSubject').val();
-            let classId = $('#teachingSelectClass').val();
+            let teacherId = $('#teacherId').val();
+            let subjectId = $('#subjectId').val();
+            let classId = $('#classId').val();
             let startingDate = $('#startingDate').val();
             let endingDate = $('#endingDate').val();
 
@@ -322,9 +337,7 @@
                 return;
             }
 
-
-            if (teachingId.length == 0) {
-                //Use ajax add teaching
+            if (teachingId.length == 0) { //Add teaching
                 $.ajax({
                     url: '/admin/teaching/AddTeaching',
                     type: 'post',
@@ -341,9 +354,10 @@
 
                             $('#startingDate').val('');
                             $('#endingDate').val('');
-                            $('#teachingSelectTeacher').val(-1);
-                            $('#teachingSelectSubject').val(-1);
-                            $('#teachingSelectClass').val(-1);
+                            $('#subjectId').val(-1);
+                            $('#teacherId').val(-1);
+                            $('#classId').val(-1);
+
                             LoadListTeaching(keyword, page);
                         }
                         else {
@@ -352,8 +366,7 @@
                     }
                 })
             }
-            else {
-                //Use ajax update teaching
+            else { //Update teaching
                 $.ajax({
                     url: '/admin/teaching/UpdateTeaching',
                     type: 'post',
@@ -370,6 +383,8 @@
                             alert(data.message);
 
                             $('#modalTeaching').modal('hide');
+
+                            page = 1;
                             LoadListTeaching(keyword, page);
                         }
                         else {
@@ -389,18 +404,34 @@
                 alert("Vui lòng nhập từ khóa tìm kiếm!");
                 return;
             }
+
             page = 1;
             LoadListTeaching(keyword, page)
         })
 
-        //Reload list teaching input null
+        //Reload list teaching when search null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
                 LoadListTeaching(keyword, page);
             }
         })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListTeaching(keyword, page);
+        })
+
+        //Format date
+        function FormatDate(date) {
+            var newDate = new Date(date);
+            var formattedDate = newDate.getFullYear() + "-" + String(newDate.getMonth() + 1).padStart(2, "0") + "-" + String(newDate.getDate()).padStart(2, "0");
+
+            return formattedDate;
+        }
     </script>
 }
 

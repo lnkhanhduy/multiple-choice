@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách môn học";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -62,8 +62,15 @@
                 <div class="card-body">
                     <input hidden id="subjectId" value="" />
                     <div class="form-group">
+                        <label class="control-label mt-2">Khối</label>
                         <select class="form-select" id="subjectSelectGrade">
                             <option value='-1' selected>Chọn khối</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label mt-2 d-block">Trưởng bộ môn</label>
+                        <select class="form-selectab-content d-block" id="subjectSelectLeader">
+                            <option value='-1' selected>Chọn trưởng bộ môn</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -87,27 +94,27 @@
 
 
 @section Scripts{
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
         var keyword = '';
         var page = 1;
 
         $(document).ready(function () {
             LoadListGrade();
+            LoadListTeacher();
             LoadListSubject(keyword, page);
+
+            $('#subjectSelectLeader').select2({
+                dropdownParent: $('#modalSubject')
+            });
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-            LoadListSubject(keyword, page);
-        })
-
-        //Load List Grade
+        //Load list grade
         function LoadListGrade() {
-            //use ajax to load list grade
             $.ajax({
-                url: "/admin/grade/GetAllGrade",
+                url: "/admin/subject/GetListGrade",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
@@ -122,9 +129,26 @@
             })
         };
 
-        //Load List Subject
+        //Load list teacher
+        function LoadListTeacher() {
+            $.ajax({
+                url: "/admin/subject/GetListTeacher",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#subjectSelectLeader').empty();
+                        $('#subjectSelectLeader').append("<option value='-1' selected>Chọn giáo viên</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.teacherName} (${item.idTeacher})</option>`;
+                            $('#subjectSelectLeader').append(option);
+                        })
+                    }
+                }
+            })
+        };
+
+        //Load list subject
         function LoadListSubject() {
-            //use ajax to load list subject
             $.ajax({
                 url: "/admin/subject/GetListSubject",
                 type: "get",
@@ -169,43 +193,7 @@
             })
         };
 
-        //Get Detail
-        $(document).on('click', "button[name='view']", function () {
-            let subjectId = $(this).closest('tr').attr('id');
-
-            $.ajax({
-                url: '/admin/subject/GetDetail',
-                type: "get",
-                data: {
-                    id: subjectId
-                },
-                success: function (data) {
-                    if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Chi tiết môn học");
-
-                        //set value input
-                        $('#subjectSelectGrade').val(data.data.idGrade)
-                        $('#subjectName').val(data.data.subjectName);
-                        $('#subjectMeta').val(data.data.meta);
-
-                        //readonly input
-                        $('#subjectName').prop('readonly', true);
-                        $('#subjectMeta').prop('readonly', true);
-
-                        //hidden button add
-                        $('#btnSubmit').hide();
-
-                        //show modal
-                        $('#modalSubject').modal('show');
-                    } else {
-                        alert(data.message);
-                    }
-                }
-            })
-        });
-
-        //Add Subject
+        //Show modal add subject
         $('#btnAdd').click(function () {
             $('#modalTitle').text("Thêm môn học");
 
@@ -217,31 +205,60 @@
             $('#subjectName').prop('readonly', false);
             $('#subjectMeta').prop('readonly', false);
 
-            //show button add
             $('#btnSubmit').text('Thêm');
             $('#btnSubmit').show();
 
-            //show modal
             $('#modalSubject').modal('show');
         });
 
-        //Update Subject
-        $(document).on('click', "button[name='update']", function () {
+        //Show modal detail subject
+        $(document).on('click', "button[name='view']", function () {
             let subjectId = $(this).closest('tr').attr('id');
 
             $.ajax({
-                url: '/admin/subject/GetDetail',
+                url: '/admin/subject/GetDetailSubject',
                 type: "get",
                 data: {
                     id: subjectId
                 },
                 success: function (data) {
                     if (data.code == 200) {
-                        //set title
+                        $('#modalTitle').text("Chi tiết môn học");
+
+                        $('#subjectSelectGrade').val(data.data.idGrade)
+                        $('#subjectSelectLeader').val(data.data.idLeader);
+                        $('#subjectName').val(data.data.subjectName);
+                        $('#subjectMeta').val(data.data.meta);
+
+                        $('#subjectName').prop('readonly', true);
+                        $('#subjectMeta').prop('readonly', true);
+
+                        $('#btnSubmit').hide();
+
+                        $('#modalSubject').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Show modal update subject
+        $(document).on('click', "button[name='update']", function () {
+            let subjectId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/subject/GetDetailSubject',
+                type: "get",
+                data: {
+                    id: subjectId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
                         $('#modalTitle').text("Cập nhật thông tin môn học");
 
-                        //set value input
                         $('#subjectSelectGrade').val(data.data.idGrade);
+                        $('#subjectSelectLeader').val(data.data.idLeader);
                         $('#subjectId').val(subjectId);
                         $('#subjectName').val(data.data.subjectName);
                         $('#subjectMeta').val(data.data.meta);
@@ -249,26 +266,22 @@
                         $('#subjectName').prop('readonly', false);
                         $('#subjectMeta').prop('readonly', false);
 
-                        //show button add
-                        $('#btnSubmit').text('Lưu');
+                        $('#btnSubmit').text('Cập nhật');
                         $('#btnSubmit').show();
 
-                        //show modal
                         $('#modalSubject').modal('show');
                     } else {
                         alert(data.message);
                     }
                 }
             })
-
         });
 
-        //Delete Subject
+        //Delete subject
         $(document).on('click', "button[name='delete']", function () {
             let subjectId = $(this).closest('tr').attr('id');
 
             if (confirm("Bạn có chắc muốn xóa môn học này?")) {
-                //Use ajax delete subject
                 $.ajax({
                     url: '/admin/subject/DeleteSubject',
                     type: "post",
@@ -278,6 +291,8 @@
                     success: function (data) {
                         if (data.code == 200) {
                             alert(data.message);
+
+                            page = 1;
                             LoadListSubject(keyword, page);
                         } else {
                             alert(data.message);
@@ -285,27 +300,27 @@
                     }
                 })
             }
-
         });
 
-        //Submit Modal
+        //Submit modal
         $('#btnSubmit').click(function () {
             let subjectId = $('#subjectId').val();
             let gradeId = $('#subjectSelectGrade').val();
+            let leaderId = $('#subjectSelectLeader').val();
             let subjectName = $('#subjectName').val().trim();
             let subjectMeta = $('#subjectMeta').val().trim();
 
-            if (gradeId == -1 || subjectName.length == 0 || subjectMeta.length == 0) {
+            if (leaderId == -1 || gradeId == -1 || subjectName.length == 0 || subjectMeta.length == 0) {
                 alert("Vui lòng nhập đầy đủ dữ liệu!");
                 return;
             }
 
-            if (subjectId.length == 0) {
-                //Use ajax add subject
+            if (subjectId.length == 0) { //Add subject
                 $.ajax({
                     url: '/admin/subject/AddSubject',
                     type: 'post',
                     data: {
+                        leaderId,
                         gradeId,
                         subjectName,
                         subjectMeta
@@ -315,6 +330,7 @@
                             alert(data.message);
 
                             $('#subjectSelectGrade').val(-1);
+                            $('#subjectSelectLeader').val(-1);
                             $('#subjectName').val('');
                             $('#subjectMeta').val('');
                             LoadListSubject(keyword, page);
@@ -325,13 +341,13 @@
                     }
                 })
             }
-            else {
-                //Use ajax update subject
+            else { //Update subject
                 $.ajax({
                     url: '/admin/subject/UpdateSubject',
                     type: 'post',
                     data: {
                         id: subjectId,
+                        leaderId,
                         gradeId,
                         subjectName,
                         subjectMeta
@@ -371,13 +387,20 @@
             LoadListSubject(keyword, page)
         })
 
-        //Reload list subject input null
+        //Reload list subject when search null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
                 LoadListSubject(keyword, page)
             }
+        })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListSubject(keyword, page);
         })
     </script>
 }

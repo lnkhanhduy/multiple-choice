@@ -1,0 +1,214 @@
+﻿@{
+    ViewData["Title"] = "Cấu hình";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-3 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Thêm cấu hình
+        </button>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    STT
+                </th>
+                <th>
+                    Từ khóa
+                </th>
+                <th>
+                    Giá trị
+                </th>
+                <th>
+                    Mô tả
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListSetting">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalSetting">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <input hidden id="settingId" value="" />
+                    <div class="form-group">
+                        <label class="control-label">Từ khóa</label>
+                        <input type="text" class="form-control" id="keyword" placeholder="Từ khóa" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Giá trị</label>
+                        <input type="text" class="form-control" id="value" placeholder="Giá trị" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Mô tả</label>
+                        <textarea class="form-control" id="description" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="button" class="btn btn-success" id="btnSubmit">Thêm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts{
+    <script>
+        $(document).ready(function () {
+            LoadListSetting();
+        });
+
+        //Load list setting
+        function LoadListSetting() {
+            $.ajax({
+                url: "/admin/setting/GetListSetting",
+                type: "get",
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#tBodyListSetting').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.keyword}>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-3">${item.keyword}</td>`;
+                            tr += `<td class="col-sm-3">${item.value}</td>`;
+                            tr += `<td class="col-sm-4">${item.descroption != null ? item.descroption : 'Không có mô tả'}</td>`;
+                            tr += '<td class="col-sm-1 text-center">';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListSetting').append(tr);
+                        })
+                    }
+                    else {
+                        alert(data.message);
+                    }
+                }
+            })
+        }
+
+        //Show modal add setting
+        $('#btnAdd').click(function () {
+            $('#modalTitle').text("Thêm cấu hình");
+
+            $('#settingId').val('');
+            $('#keyword').val('');
+            $('#value').val('');
+            $('#description').val('');
+
+            $('#keyword').prop('readonly', false);
+
+            $('#btnSubmit').text('Thêm');
+
+            $('#modalSetting').modal('show');
+        });
+
+        //Show modal update setting
+        $(document).on('click', "button[name='update']", function () {
+            let keyword = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/setting/GetDetailSetting',
+                type: "get",
+                data: {
+                    keyword
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#modalTitle').text("Cập nhật thông tin cấu hình");
+
+                        $('#settingId').val(data.data.keyword);
+                        $('#keyword').val(data.data.keyword);
+                        $('#value').val(data.data.value);
+                        $('#description').val(data.data.description != null ? data.data.description : 'Không có mô tả');
+
+                        $('#keyword').prop('readonly', true);
+
+                        $('#btnSubmit').text('Cập nhật');
+                        $('#btnSubmit').show();
+
+                        $('#modalSetting').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Submit modal
+        $('#btnSubmit').click(function () {
+            let settingId = $('#settingId').val();
+            let keyword = $('#keyword').val().trim();
+            let value = $('#value').val().trim();
+            let description = $('#description').val().trim();
+
+            if (keyword.length == 0 || value.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu!");
+                return;
+            }
+
+            if (settingId.length == 0) { //Add setting
+                $.ajax({
+                    url: '/admin/setting/AddSetting',
+                    type: 'post',
+                    data: {
+                        keyword,
+                        value,
+                        description
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#keyword').val('');
+                            $('#value').val('');
+                            $('#description').val('');
+                            LoadListSetting();
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+            else { //Update setting
+                $.ajax({
+                    url: '/admin/setting/UpdateSetting',
+                    type: 'post',
+                    data: {
+                        keyword,
+                        value,
+                        description
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#modalSetting').modal('hide');
+                            LoadListSetting();
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+    </script>
+}
+

@@ -4,7 +4,7 @@ using MultipleChoice.Models;
 namespace MultipleChoice.Areas.TeacherArea.Controllers
 {
     [Area("TeacherArea")]
-    //[Authorize]
+    [Authorize]
     public class ExamController : Controller
     {
         private readonly MultipleChoiceContext _context;
@@ -84,24 +84,29 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             }
         }
 
-        //Get List Exam
+        //Get list exm
         [HttpGet]
-        public JsonResult GetListExam(string keyword, int page)
+        public JsonResult GetListExam(int subjectId, string keyword, int page)
         {
             try
             {
+                var _idTeacher = HttpContext.Session.GetInt32("teacher");
+                var _checkLeader = _context.Subjects.SingleOrDefault(x => x.Id == subjectId);
+                var _isLeader = false;
+                if (_checkLeader != null && _checkLeader.IdLeader == _idTeacher)
+                {
+                    _isLeader = true;
+                }
+
                 var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listExamFromDB = (from _exam in _context.Exams.Where(x => x.IsDelete != 1).OrderByDescending(x => x.Id)
+                var listExamFromDB = (from _exam in _context.Exams.Where(x => x.IsDelete != 1 && x.IdSubject == subjectId).OrderBy(x => x.IsApprove).ThenByDescending(x => x.Id)
                                       join _examDuration in _context.ExamDurations on _exam.IdDuration equals _examDuration.Id
                                       join _teacher in _context.Teachers on _exam.Author equals _teacher.Id
-                                      join _subject in _context.Subjects on _exam.IdSubject equals _subject.Id
                                       select new
                                       {
                                           Id = _exam.Id,
                                           DurationName = _examDuration.DurationName,
                                           DurationTime = _examDuration.DurationTime,
-                                          SubjectId = _exam.IdSubject,
-                                          SubjectName = _subject.SubjectName,
                                           ExamDate = _exam.ExamDate,
                                           Author = _teacher.TeacherName,
                                           IsApprove = _exam.IsApprove,
@@ -125,51 +130,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
                 {
                     code = 200,
                     message = "Lấy danh sách đề thi thành công!",
-                    pageSize,
-                    data = listExam
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách đề thi thất bại: " + ex.Message
-                });
-            }
-
-        }
-
-        //Get List Exam By Subject
-        [HttpGet]
-        public JsonResult GetListExamBySubject(int subiectId, int page)
-        {
-            try
-            {
-                var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listExamFromDB = (from _exam in _context.Exams.Where(x => x.IsDelete != 1 && x.IdSubject == subiectId).OrderByDescending(x => x.Id)
-                                      join _examDuration in _context.ExamDurations on _exam.IdDuration equals _examDuration.Id
-                                      join _teacher in _context.Teachers on _exam.Author equals _teacher.Id
-                                      select new
-                                      {
-                                          Id = _exam.Id,
-                                          DurationName = _examDuration.DurationName,
-                                          DurationTime = _examDuration.DurationTime,
-                                          ExamDate = _exam.ExamDate,
-                                          Author = _teacher.TeacherName,
-                                          IsApprove = _exam.IsApprove,
-                                      }
-                                      ).ToList();
-
-                var pageSize = listExamFromDB.Count % settingsPages == 0 ? listExamFromDB.Count / settingsPages : listExamFromDB.Count / settingsPages + 1;
-                var listExam = listExamFromDB.Skip((page - 1) * settingsPages)
-                                   .Take(settingsPages)
-                                   .ToList();
-
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách đề thi thành công!",
+                    IsLeader = _isLeader,
                     pageSize,
                     data = listExam
                 });
@@ -228,7 +189,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
                                       Id = _lesson.Id,
                                       LessonName = _lesson.LessonName,
                                   }).AsEnumerable()
-                                    .OrderBy(x => GetNumber(x.LessonName)).ToList();
+                    .OrderBy(x => GetNumber(x.LessonName)).ToList();
 
                 return Json(new
                 {
@@ -310,6 +271,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
         {
             try
             {
+                var _isApprove = _context.Exams.SingleOrDefault(x => x.Id == examId).IsApprove == 1 ? true : false;
                 var listQuestion = (from _questionExam in _context.ExamsQuestions.Where(x => x.IdExam == examId && x.IsDelete != 1).OrderByDescending(x => x.Id)
                                     join _question in _context.Questions on _questionExam.IdQuestion equals _question.Id
                                     join _answer in _context.Answers on _question.IdAnswer equals _answer.Id
@@ -330,6 +292,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
                 {
                     code = 200,
                     message = "Lấy danh sách câu hỏi trong đề thi thành công!",
+                    IsApprove = _isApprove,
                     data = listQuestion
                 });
             }
@@ -377,12 +340,56 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             }
         }
 
+        //Approve Exam
+        [HttpPost]
+        public JsonResult ApproveExam(int[] listExam)
+        {
+            try
+            {
+                foreach (var id in listExam)
+                {
+
+                    var _exam = _context.Exams.SingleOrDefault(x => x.Id == id);
+                    if (_exam != null)
+                    {
+                        _exam.IsApprove = 1;
+                    }
+
+                    _context.SaveChanges();
+                }
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Phê duyệt đề thi thành công!",
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Phê duyệt đề thi thất bại: " + ex.Message
+                });
+            }
+        }
+
         //Add Question In Exam
         [HttpPost]
         public JsonResult AddQuestion(int examId, int questionId)
         {
             try
             {
+                var _question = _context.ExamsQuestions.FirstOrDefault(x => x.IdExam == examId && x.IdQuestion == questionId);
+                if (_question != null)
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Câu hỏi đã có trong đề thi!",
+                    });
+                }
+
                 var _examQuestion = new ExamsQuestion();
 
                 _examQuestion.IdQuestion = questionId;

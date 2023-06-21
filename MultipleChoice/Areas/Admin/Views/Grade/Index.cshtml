@@ -1,0 +1,335 @@
+﻿@{
+    ViewData["Title"] = "Danh sách khối";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-3 mb-2">
+        <button class="btn btn-success" id="btnAdd">
+            <i class="fa-solid fa-plus"></i>
+            Thêm khối
+        </button>
+    </div>
+
+    <div class="col-sm-3 offset-sm-6 mb-2">
+        <form id="formSearch">
+            <div class="input-group">
+                <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
+                <div class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav aria-label="..." class="mt-2">
+    <ul class="pagination pagination-sm" id="pagination">
+    </ul>
+</nav>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    STT
+                </th>
+                <th>
+                    Khối
+                </th>
+                <th>
+                    Thẻ meta
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tBodyListGrade">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modalGrade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="card">
+                <h5 class="card-header" id="modalTitle"></h5>
+                <div class="card-body">
+                    <input hidden id="gradeId" value="" />
+                    <div class="form-group">
+                        <label class="control-label">Tên khối</label>
+                        <input type="text" class="form-control" id="gradeName" placeholder="Tên khối" />
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Thẻ meta</label>
+                        <input type="text" class="form-control" id="gradeMeta" placeholder="Thẻ meta" />
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="button" class="btn btn-success" id="btnSubmit">Thêm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts{
+    <script>
+        let keyword = '';
+        let page = 1;
+
+        $(document).ready(function () {
+            LoadListGrade(keyword, page);
+        });
+
+        //Load list grade
+        function LoadListGrade(keyword, page) {
+            $.ajax({
+                url: "/admin/grade/GetListGrade",
+                type: "get",
+                data: {
+                    keyword,
+                    page
+                },
+                success: function (data) {
+                    console.log(data)
+                    if (data.code === 200) {
+                        $('#tBodyListGrade').empty();
+                        $.each(data.data, function (index, item) {
+                            let tr = `<tr id=${item.id}>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`;
+                            tr += `<td class="col-sm-4">${item.gradeName}</td>`;
+                            tr += `<td class="col-sm-4">${item.meta}</td>`;
+                            tr += '<td class="col-sm-2 text-end">';
+                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
+                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += "</td>";
+                            tr += "</tr>";
+
+                            $('#tBodyListGrade').append(tr);
+                        })
+
+                        if (data.pageSize > 1) {
+                            $('#pagination').empty();
+                            for (var i = 1; i <= data.pageSize; i++) {
+                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                $('#pagination').append(li);
+                            }
+                            let li = $(`#pagination li#${page}`);
+                            $(li).addClass('active');
+                        }
+                        else {
+                            $('#pagination').empty();
+                        }
+                    }
+                }
+            })
+        };
+
+        //Show modal add grade
+        $('#btnAdd').click(function () {
+            $('#modalTitle').text("Thêm khối");
+
+            $('#gradeId').val('');
+            $('#gradeName').val('');
+            $('#gradeMeta').val('');
+
+            $('#gradeName').prop('readonly', false);
+            $('#gradeMeta').prop('readonly', false);
+
+            $('#btnSubmit').text('Thêm');
+            $('#btnSubmit').show();
+
+            $('#modalGrade').modal('show');
+        });
+
+        //Show modal detail grade
+        $(document).on('click', "button[name='view']", function () {
+            let gradeId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/grade/GetDetailGrade',
+                type: "get",
+                data: {
+                    id: gradeId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#modalTitle').text("Chi tiết khối");
+
+                        $('#gradeName').val(data.data.gradeName);
+                        $('#gradeMeta').val(data.data.meta);
+
+                        $('#gradeName').prop('readonly', true);
+                        $('#gradeMeta').prop('readonly', true);
+
+                        $('#btnSubmit').hide();
+
+                        $('#modalGrade').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Show modal update grade
+        $(document).on('click', "button[name='update']", function () {
+            let gradeId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/grade/GetDetailGrade',
+                type: "get",
+                data: {
+                    id: gradeId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#modalTitle').text("Cập nhật thông tin khối");
+
+                        $('#gradeId').val(gradeId);
+                        $('#gradeName').val(data.data.gradeName);
+                        $('#gradeMeta').val(data.data.meta);
+
+                        $('#gradeName').prop('readonly', false);
+                        $('#gradeMeta').prop('readonly', false);
+
+                        $('#btnSubmit').text('Cập nhật');
+                        $('#btnSubmit').show();
+
+                        $('#modalGrade').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+
+        });
+
+        //Delete grade
+        $(document).on('click', "button[name='delete']", function () {
+            let gradeId = $(this).closest('tr').attr('id');
+
+            if (confirm("Bạn có chắc muốn xóa khối này?")) {
+                $.ajax({
+                    url: '/admin/grade/DeleteGrade',
+                    type: "post",
+                    data: {
+                        id: gradeId
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            page = 1;
+                            LoadListGrade(keyword, page);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+
+        });
+
+        //Submit modal
+        $('#btnSubmit').click(function () {
+            let gradeId = $('#gradeId').val();
+            let gradeName = $('#gradeName').val().trim();
+            let gradeMeta = $('#gradeMeta').val().trim();
+
+            if (gradeName.length == 0 || gradeMeta.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu!");
+                return;
+            }
+
+            if (gradeId.length == 0) { //Add Grade
+                $.ajax({
+                    url: '/admin/grade/AddGrade',
+                    type: 'post',
+                    data: {
+                        gradeName,
+                        gradeMeta
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#gradeName').val('');
+                            $('#gradeMeta').val('');
+                            LoadListGrade(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+            else { //Update Grade
+                $.ajax({
+                    url: '/admin/grade/UpdateGrade',
+                    type: 'post',
+                    data: {
+                        id: gradeId,
+                        gradeName,
+                        gradeMeta
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.message);
+
+                            $('#modalGrade').modal('hide');
+                            LoadListGrade(keyword, page);
+                        }
+                        else {
+                            alert(data.message);
+                        }
+                    }
+                })
+            }
+        })
+
+        //Search
+        $('#formSearch').submit(function (e) {
+            e.preventDefault();
+            keyword = $('#search').val().trim();
+
+            if (keyword.length == 0) {
+                return;
+            }
+
+            page = 1;
+            LoadListGrade(keyword, page)
+        })
+
+        //Reload list grade when search null
+        $('#search').keyup(function () {
+            if ($("#search").val().length == 0) {
+                keyword = '';
+                page = 1;
+                LoadListGrade(keyword, page);
+            }
+        })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListGrade(keyword, page);
+        })
+
+        //Convert grade name to meta
+        $('#gradeName').keyup(function () {
+            let convertedString = $(this).val().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); //remove diacritics
+            convertedString = convertedString.replace(/\s+/g, "-").toLowerCase(); //Add a hyphen between two words
+            $('#gradeMeta').val(convertedString)
+        })
+    </script>
+}
+

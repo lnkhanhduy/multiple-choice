@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách đề thi";
     Layout = "~/Areas/TeacherArea/Views/Shared/_TeacherLayout.cshtml";
 }
 
@@ -18,8 +18,8 @@
     </div>
 
     <div class="col-sm-2 mb-2">
-        <button class="btn btn-success" id="btnAdd">
-            <i class="fa-solid fa-plus"></i>
+        <button class="btn btn-success" id="btnApprove">
+            <i class="fa-solid fa-check"></i>
             Phê duyệt đề thi
         </button>
     </div>
@@ -133,7 +133,7 @@
                     <div class="control-label mt-2 mb-1">Chọn câu hỏi</div>
 
                     <div class="input-group">
-                        <select class="form-select" id="examDetailSelectQuestion">
+                        <select class="form-select col-sm-9" id="examDetailSelectQuestion">
                             <option value="-1">Chọn câu hỏi</option>
                         </select>
                         <div class="input-group-prepend">
@@ -188,44 +188,33 @@
     </div>
 </div>
 
-
 @section Scripts{
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
-        var keyword = '';
-        var page = 1;
-        var examId = -1;
+        let keyword = '';
+        let page = 1;
+        let examId = -1;
 
         $(document).ready(function () {
+            $('#btnApprove').hide();
             LoadListSubject();
             LoadListDuration();
             LoadListLevel();
-            LoadListExam(keyword, page);
+
+            $('#examDetailSelectQuestion').select2({
+                dropdownParent: $('#modalDetailExam')
+            });
 
         });
-
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-
-            if ($('#examSelectSubject').val() == -1) {
-                LoadListExam(keyword, page);
-            }
-            else {
-                LoadListExamBySubject($('#examSelectSubject').val(), page);
-            }
-        })
 
         //Load List Exam When Subject Change
         $('#examSelectSubject').on('change', function () {
             $("#search").val('');
+
             page = 1;
-            if ($('#examSelectSubject').val() == -1) {
-                LoadListExam(keyword, page);
-            }
-            else {
-                LoadListExamBySubject($('#examSelectSubject').val(), page);
-            }
+            LoadListExam(keyword, page);
         })
 
         //Load List Lesson When Chgapter Change
@@ -299,79 +288,39 @@
             })
         };
 
-        //Load List Exam
+        //Load list exam
         function LoadListExam(keyword, page) {
-            //use ajax to load list exam
             $.ajax({
                 url: "/teacherarea/exam/GetListExam",
                 type: "get",
                 data: {
+                    subjectId: $('#examSelectSubject').val(),
                     keyword,
                     page
                 },
                 success: function (data) {
                     if (data.code === 200) {
-                        $('#tBodyListExam').empty();
-                        $.each(data.data, function (index, item) {
-                            let tr = `<tr id=${item.id} data-id-subject='${item.subjectId}' data-name-subject='${item.subjectName}'>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-2">${item.durationName}</td>`;
-                            tr += `<td class="col-sm-2">${item.durationTime} phút</td>`;
-                            tr += '<td class="col-sm-2">' + new Date(item.examDate).getDate()
-                                + "/" + Number(new Date(item.examDate).getMonth() + 1)
-                                + "/" + new Date(item.examDate).getFullYear() + "</td>";
-                            tr += `<td class="col-sm-3">${item.author}</td>`;
-                            tr += `<td class="col-sm-1 text-center">${item.isApprove == 1 ? '<i class="fa-solid fa-circle-check text-success"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'}</td>`;
-                            tr += '<td class="col-sm-1 text-center">';
-                            tr += '<button class="btn btn-info btn-sm" name="list"><i class="fa-solid fa-bars"></i></i></button>';
-                            tr += "</td>";
-                            tr += "</tr>";
-
-                            $('#tBodyListExam').append(tr);
-                        })
-                        if (data.pageSize > 1) {
-                            $('#pagination').empty();
-                            for (var i = 1; i <= data.pageSize; i++) {
-                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
-                                $('#pagination').append(li);
-                            }
-                            let li = $(`#pagination li#${page}`);
-                            $(li).addClass('active');
+                        if (data.isLeader) {
+                            $('#btnApprove').show();
                         }
                         else {
-                            $('#pagination').empty();
+                            $('#btnApprove').hide();
                         }
-                    }
-                }
-            })
-        };
 
-        //Load List Exam By Subject
-        function LoadListExamBySubject(subjectId, page) {
-            //use ajax to load list exam
-            $.ajax({
-                url: "/teacherarea/exam/GetListExamBySubject",
-                type: "get",
-                data: {
-                    subiectId: subjectId,
-                    page
-                },
-                success: function (data) {
-                    if (data.code === 200) {
                         $('#tBodyListExam').empty();
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id='${item.id}''>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-2">${item.durationName}</td>`;
+                            tr += `<td class="col-sm-1">${index + 1}</td>`
+                            tr += `<td class="col-sm-2">${item.durationName}</td>`
                             tr += `<td class="col-sm-2">${item.durationTime} phút</td>`;
                             tr += '<td class="col-sm-2">' + new Date(item.examDate).getDate()
                                 + "/" + Number(new Date(item.examDate).getMonth() + 1)
                                 + "/" + new Date(item.examDate).getFullYear() + "</td>";
-                            tr += `<td class="col-sm-3">${item.author}</td>`;
+                            tr += `<td class="col-sm-2">${item.author}</td>`;
                             tr += `<td class="col-sm-1 text-center">${item.isApprove == 1 ? '<i class="fa-solid fa-circle-check text-success"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'}</td>`;
                             tr += '<td class="col-sm-1 text-center">';
-                            tr += '<button class="btn btn-info btn-sm" name="list"><i class="fa-solid fa-bars"></i></i></button> ';
-                            tr += "</td>";
+                            tr += '<button class="btn btn-info btn-sm" name="list"><i class="fa-solid fa-bars"></i></button> ';
+                            tr += `${item.isApprove != 1 ? '<input type="checkbox"/>' : '<span class="input-seperate"></span>'}</td>`;
                             tr += "</tr>";
 
                             $('#tBodyListExam').append(tr);
@@ -394,7 +343,7 @@
             })
         };
 
-        //Load List Chapter
+        //Load list chapter
         function LoadListChapter(id) {
             if (id != -1) {
                 $.ajax({
@@ -417,7 +366,7 @@
             }
         };
 
-        //Load List Lesson
+        //Load list lesson
         function LoadListLesson(id) {
             if (id != -1) {
                 $.ajax({
@@ -440,7 +389,7 @@
             }
         };
 
-        //Load List Level
+        //Load list level
         function LoadListLevel() {
             $.ajax({
                 url: "/teacherarea/exam/GetListLevel",
@@ -458,9 +407,8 @@
             });
         };
 
-        //Load List Question
+        //Load list question
         function LoadListQuestion(lessonId, levelId) {
-            //use ajax to load list question
             $.ajax({
                 url: "/teacherarea/exam/GetListQuestion",
                 type: "get",
@@ -481,9 +429,8 @@
             })
         };
 
-        //Load List Question By Exam
+        //Load list question when get detail exam
         function LoadListQuestionByExam(examId) {
-            //use ajax to load list question
             $.ajax({
                 url: "/teacherarea/exam/GetListQuestionByExam",
                 type: "get",
@@ -492,12 +439,18 @@
                 },
                 success: function (data) {
                     if (data.code === 200) {
+                        if (data.isApprove) {
+                            $('#btnSubmitDetail').hide();
+                        }
+                        else {
+                            $('#btnSubmitDetail').show();
+                        }
                         let questionCount = data.data.length;
                         let levelCount = {};
                         $('#tBodyListDetailExam').empty();
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id='${item.id}'>`;
-                            tr += `<td class="col-sm-2">${item.questionContent}</td>`;
+                            tr += `<td class="col-sm-2 fw-bold text-primary">${item.questionContent}</td>`;
                             tr += `<td class="col-sm-2">${item.answerA}</td>`;
                             tr += `<td class="col-sm-2">${item.answerB}</td>`;
                             tr += `<td class="col-sm-2">${item.answerC}</td>`;
@@ -505,7 +458,7 @@
                             tr += `<td class="col-sm-1">${item.level}</td>`;
                             tr += `<td class="col-sm-1">${item.answer}</td>`;
                             tr += `<td class="col-sm-1 text-end">`;
-                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                            tr += !data.isApprove ? '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>' : '';
                             tr += "</td>";
                             tr += "</tr>";
                             $('#tBodyListDetailExam').append(tr);
@@ -518,18 +471,18 @@
                         })
 
                         $('#InfoExam').empty();
-                        $('#InfoExam').append(`<div class='col-xl-2 col-sm-3'>Số câu hỏi: <span style="font-weight:bold">${questionCount}</span></div>`);
-                        $('#InfoExam').append(`<div class='col-xl-1 col-sm-2' style="font-weight:bold">Mức độ:</div>`);
+                        $('#InfoExam').append(`<div class='col-xl-2 col-sm-3'>Số câu hỏi: <span class="fw-bold">${questionCount}</span></div>`);
+                        $('#InfoExam').append(`<div class='col-xl-1 col-sm-2 fw-bold'>Mức độ:</div>`);
 
                         $.each(levelCount, function (level, count) {
-                            $('#InfoExam').append(`<div class='col-xl-1 col-sm-2'>${level}: <span style="font-weight:bold">${count}</span></div>`)
+                            $('#InfoExam').append(`<div class='col-xl-1 col-sm-2'>${level}: <span class="fw-bold">${count}</span></div>`)
                         });
                     }
                 }
             })
         };
 
-        //Get Detail
+        //Show modal detail exam
         $(document).on('click', "button[name='list']", function () {
             examId = $(this).closest('tr').attr('id');
             let subjectId = $('#examSelectSubject').val() != -1 ? $('#examSelectSubject').val() : $(this).closest('tr').attr('data-id-subject');
@@ -541,12 +494,12 @@
             LoadListQuestionByExam(examId)
 
             $('#modalDetailTitle').text(`Đề thi môn ${subjectName} `)
-            //show modal
+
             $('#modalDetailExam').modal('show');
 
         });
 
-        //Delete Question
+        //Delete question
         $(document).on('click', "button[name='delete']", function () {
             let id = $(this).closest('tr').attr('id')
 
@@ -571,8 +524,37 @@
             }
         });
 
+        //Approve exam
+        $('#btnApprove').click(function () {
+            let listExam = [];
+            $('#tBodyListExam > tr').each(function (index, item) {
+                if ($(this).find('input').is(':checked')) {
+                    let id = $(this).attr('id');
+                    listExam.push(id);
+                }
 
-        //Add Exam
+                if (listExam.length > 0) {
+                    $.ajax({
+                        url: '/teacherarea/exam/ApproveExam',
+                        type: 'post',
+                        data: {
+                            listExam
+                        },
+                        success: function (data) {
+                            if (data.code == 200) {
+                                alert(data.message);
+                                LoadListExamBySubject($('#examSelectSubject').val(), page);
+                            }
+                            else {
+                                alert(data.message);
+                            }
+                        }
+                    })
+                }
+            })
+        })
+
+        //Show modal add exam
         $('#btnAdd').click(function () {
             if ($('#examSelectSubject').val() == -1) {
                 alert('Vui lòng chọn môn học');
@@ -592,7 +574,7 @@
             $('#modalExam').modal('show');
         });
 
-        //Submit Modal
+        //Submit modal
         $('#btnSubmit').click(function () {
             let examDate = $('#examDate').val();
             let subjectId = $('#examSelectSubject').val();
@@ -627,7 +609,7 @@
             })
         })
 
-        //Submit Question
+        //Submit question enter exam
         $('#btnSubmitDetail').click(function () {
             if ($('#examDetailSelectQuestion').val() == -1) {
                 alert("Vui lòng chọn câu hỏi!");
@@ -658,28 +640,29 @@
         $('#formSearch').submit(function (e) {
             e.preventDefault();
             keyword = $('#search').val().trim();
-            page = 1;
 
             if (keyword.length == 0) {
                 return;
             }
 
-            $('#examSelectSubject').val(-1)
+            page = 1;
             LoadListExam(keyword, page);
         })
 
-        //Reload list class input null
+        //Reload list question when sreach null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
-                if ($('#examSelectSubject').val() == -1) {
-                    LoadListExam(keyword, page);
-                }
-                else {
-                    LoadListExamBySubject($('#examSelectSubject').val(), page);
-                }
+                LoadListExam(keyword, page);
             }
+        })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListExam(keyword, page);
         })
     </script>
 }

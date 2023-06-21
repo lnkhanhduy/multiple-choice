@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách chương";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -11,7 +11,7 @@
     </div>
 
     <div class="form-group col-sm-2">
-        <select class="form-select" id="chapterSelectSubjectFilter">
+        <select class="form-select" id="chapterSelectSubject">
             <option value='-1' selected>Chọn môn học</option>
         </select>
     </div>
@@ -50,9 +50,6 @@
                     STT
                 </th>
                 <th>
-                    Môn học
-                </th>
-                <th>
                     Chương
                 </th>
                 <th>
@@ -73,11 +70,6 @@
                 <h5 class="card-header" id="modalTitle"></h5>
                 <div class="card-body">
                     <input hidden id="chapterId" value="" />
-                    <div class="form-group">
-                        <label class="control-label">Môn học</label>
-                        <select class="form-select" id="chapterSelectSubject">
-                        </select>
-                    </div>
                     <div class="form-group">
                         <label class="control-label">Tên lớp</label>
                         <input type="text" class="form-control" id="chapterName" placeholder="Tên chương" />
@@ -100,57 +92,42 @@
 
 @section Scripts{
     <script>
-        var keyword = '';
-        var page = 1;
+        let keyword = '';
+        let page = 1;
 
         $(document).ready(function () {
-            LoadListSubject();
             LoadListGrade();
             LoadListChapter(keyword, page);
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-
-            if ($('#chapterSelectSubjectFilter').val() != -1) {
-                LoadListChapterBySubject(page);
-                return;
-            }
-
-            LoadListChapter(keyword, page);
-        })
-
-        //Load List Subject When Grade Change
+        //Load list subject when grade change
         $('#chapterSelectGrade').on('change', function () {
             if ($('#chapterSelectGrade').val() == -1) {
-                $('#chapterSelectSubjectFilter').empty();
-                $('#chapterSelectSubjectFilter').append("<option value='-1' selected>Chọn môn học</option>");
-                LoadListSubject();
-                return;
+                $('#chapterSelectSubject').empty();
+                $('#chapterSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
             }
-
-            LoadListSubject();
+            else {
+                LoadListSubject($('#chapterSelectGrade').val());
+            }
         });
 
-        //Load List Chapter Select Subject Change
-        $('#chapterSelectSubjectFilter').on('change', function () {
-            page = 1;
+        //Load list chapter when subject change
+        $('#chapterSelectSubject').on('change', function () {
             $("#search").val('');
-            if ($('#chapterSelectSubjectFilter').val() == -1) {
-                LoadListChapter(keyword, page);
+            if ($('#chapterSelectSubject').val() == -1) {
+                $('#tBodyListChapter').empty();
                 return;
             }
 
-            LoadListChapterBySubject(page);
+            page = 1;
+            keyword = '';
+            LoadListChapter(keyword, page);
         });
 
-        //Load List Grade
+        //Load list grade
         function LoadListGrade() {
-            //use ajax to load list grade
             $.ajax({
-                url: "/admin/grade/GetAllGrade",
+                url: "/admin/chapter/GetListGrade",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
@@ -165,60 +142,34 @@
             })
         };
 
-        //Load List Subject
-        function LoadListSubject() {
-            //use ajax to load list subject
-            if ($('#chapterSelectGrade').val() == -1) {
-                $.ajax({
-                    url: "/admin/subject/GetAllSubject",
-                    type: "get",
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#chapterSelectSubject').empty();
-                            $('#chapterSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.subjectName}</option>`;
-                                $('#chapterSelectSubject').append(option);
-                            })
-                        }
+        //Load list subject
+        function LoadListSubject(id) {
+            $.ajax({
+                url: "/admin/chapter/GetListSubject",
+                type: "get",
+                data: {
+                    gradeId: id
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#chapterSelectSubject').empty();
+                        $('#chapterSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.subjectName}</option>`;
+                            $('#chapterSelectSubject').append(option);
+                        })
                     }
-                })
-            }
-            else {
-                $.ajax({
-                    url: "/admin/subject/GetListSubjectByGrade",
-                    type: "get",
-                    data: {
-                        id: $('#chapterSelectGrade').val()
-                    },
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#chapterSelectSubject').empty();
-                            $('#chapterSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.subjectName}</option>`;
-                                $('#chapterSelectSubject').append(option);
-                            })
+                }
+            })
+        }
 
-                            $('#chapterSelectSubjectFilter').empty();
-                            $('#chapterSelectSubjectFilter').append("<option value='-1' selected>Chọn môn học</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.subjectName}</option>`;
-                                $('#chapterSelectSubjectFilter').append(option);
-                            })
-                        }
-                    }
-                })
-            }
-        };
-
-        //Load List Chapter
+        //Load list chapter
         function LoadListChapter(keyword, page) {
-            //use ajax to load list chapter
             $.ajax({
                 url: "/admin/chapter/GetListChapter",
                 type: "get",
                 data: {
+                    subjectId: $('#chapterSelectSubject').val(),
                     keyword,
                     page
                 },
@@ -228,9 +179,8 @@
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id=${item.id}>`;
                             tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-3">${item.subjectName}</td>`;
-                            tr += `<td class="col-sm-3">${item.chapterName}</td>`;
-                            tr += `<td class="col-sm-3">${item.meta}</td>`;
+                            tr += `<td class="col-sm-4">${item.chapterName}</td>`;
+                            tr += `<td class="col-sm-4">${item.meta}</td>`;
                             tr += '<td class="col-sm-2 text-end">';
                             tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
                             tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
@@ -240,6 +190,7 @@
 
                             $('#tBodyListChapter').append(tr);
                         })
+
                         if (data.pageSize > 1) {
                             $('#pagination').empty();
                             for (var i = 1; i <= data.pageSize; i++) {
@@ -257,152 +208,95 @@
             })
         };
 
-               //Function Load List Chapter Select Subject Change
-        function LoadListChapterBySubject(page) {
-            //use ajax to load list chapter
-            $.ajax({
-                url: "/admin/chapter/GetListChapterBySubject",
-                type: "get",
-                data: {
-                    id: $('#chapterSelectSubjectFilter').val(),
-                    page
-                },
-                success: function (data) {
-                    console.log(data)
-                    if (data.code === 200) {
-                        $('#tBodyListChapter').empty();
-                        $.each(data.data, function (index, item) {
-                            let tr = `<tr id=${item.id}>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-3">${item.subjectName}</td>`;
-                            tr += `<td class="col-sm-3">${item.chapterName}</td>`;
-                            tr += `<td class="col-sm-3">${item.meta}</td>`;
-                            tr += '<td class="col-sm-2 text-end">';
-                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
-                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
-                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
-                            tr += "</td>";
-                            tr += "</tr>";
-
-                            $('#tBodyListChapter').append(tr);
-                        })
-                        if (data.pageSize > 1) {
-                            $('#pagination').empty();
-                            for (var i = 1; i <= data.pageSize; i++) {
-                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
-                                $('#pagination').append(li);
-                            }
-                            let li = $(`#pagination li#${page}`);
-                            $(li).addClass('active');
-                        }
-                        else {
-                            $('#pagination').empty();
-                        }
-                    }
-                }
-            })
-        };
-
-        //Get Detail
-        $(document).on('click', "button[name='view']", function () {
-            let chapterId = $(this).closest('tr').attr('id');
-
-            $.ajax({
-                url: '/admin/chapter/GetDetail',
-                type: "get",
-                data: {
-                    id: chapterId
-                },
-                success: function (data) {
-                    if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Chi tiết chương");
-
-                        //set value input
-                        $('#chapterSelectSubject').val(data.data.idSubject);
-                        $('#chapterName').val(data.data.chapterName);
-                        $('#chapterMeta').val(data.data.meta);
-
-                        //readonly input
-                        $('#chapterName').prop('readonly', true);
-                        $('#chapterMeta').prop('readonly', true);
-
-                        //hidden button add
-                        $('#btnSubmit').hide();
-
-                        //show modal
-                        $('#modalChapter').modal('show');
-                    } else {
-                        alert(data.message);
-                    }
-                }
-            })
-        });
-
-        //Add Chapter
+        //Show modal add chapter
         $('#btnAdd').click(function () {
+            if ($('#chapterSelectSubject').val() == -1) {
+                alert('Vui lòng chọn môn học!');
+                return;
+            }
+
             $('#modalTitle').text("Thêm chương");
 
             $('#chapterId').val('');
-            $('#chapterSelectSubject').val($('#chapterSelectSubjectFilter').val());
             $('#chapterName').val('');
             $('#chapterMeta').val('');
 
             $('#chapterName').prop('readonly', false);
             $('#chapterMeta').prop('readonly', false);
 
-            //show button add
             $('#btnSubmit').text('Thêm');
             $('#btnSubmit').show();
 
-            //show modal
             $('#modalChapter').modal('show');
         });
 
-        //Update Chapter
-        $(document).on('click', "button[name='update']", function () {
+        //Show modal deail chapter
+        $(document).on('click', "button[name='view']", function () {
             let chapterId = $(this).closest('tr').attr('id');
 
             $.ajax({
-                url: '/admin/chapter/GetDetail',
+                url: '/admin/chapter/GetDetailChapter',
                 type: "get",
                 data: {
                     id: chapterId
                 },
                 success: function (data) {
                     if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Cập nhật thông tin chương");
+                        $('#modalTitle').text("Chi tiết chương");
 
-                        //set value input
-                        $('#chapterId').val(chapterId);
-                        $('#chapterSelectSubject').val(data.data.idSubject);
                         $('#chapterName').val(data.data.chapterName);
                         $('#chapterMeta').val(data.data.meta);
 
-                        $('#chapterName').prop('readonly', false);
-                        $('#chapterMeta').prop('readonly', false);
+                        $('#chapterName').prop('readonly', true);
+                        $('#chapterMeta').prop('readonly', true);
 
-                        //show button add
-                        $('#btnSubmit').text('Lưu');
-                        $('#btnSubmit').show();
+                        $('#btnSubmit').hide();
 
-                        //show modal
                         $('#modalChapter').modal('show');
                     } else {
                         alert(data.message);
                     }
                 }
             })
-
         });
 
-        //Delete Chapter
+        //Show modal update chapter
+        $(document).on('click', "button[name='update']", function () {
+            let chapterId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/chapter/GetDetailChapter',
+                type: "get",
+                data: {
+                    id: chapterId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#modalTitle').text("Cập nhật thông tin chương");
+
+                        $('#chapterId').val(chapterId);
+                        $('#chapterName').val(data.data.chapterName);
+                        $('#chapterMeta').val(data.data.meta);
+
+                        $('#chapterName').prop('readonly', false);
+                        $('#chapterMeta').prop('readonly', false);
+
+                        $('#btnSubmit').text('Cập nhật');
+                        $('#btnSubmit').show();
+
+                        $('#modalChapter').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Delete chapter
         $(document).on('click', "button[name='delete']", function () {
             let chapterId = $(this).closest('tr').attr('id');
 
             if (confirm("Bạn có chắc muốn xóa chương này?")) {
-                //Use ajax delete class
                 $.ajax({
                     url: '/admin/chapter/DeleteChapter',
                     type: "post",
@@ -412,6 +306,8 @@
                     success: function (data) {
                         if (data.code == 200) {
                             alert(data.message);
+
+                            page = 1;
                             LoadListChapter(keyword, page);
                         } else {
                             alert(data.message);
@@ -422,7 +318,7 @@
 
         });
 
-        //Submit Modal
+        //Submit modal
         $('#btnSubmit').click(function () {
             let chapterId = $('#chapterId').val();
             let subjectId = $('#chapterSelectSubject').val();
@@ -434,8 +330,7 @@
                 return;
             }
 
-            if (chapterId.length == 0) {
-                //Use ajax add chapter
+            if (chapterId.length == 0) { //Add chapter
                 $.ajax({
                     url: '/admin/chapter/AddChapter',
                     type: 'post',
@@ -448,7 +343,6 @@
                         if (data.code == 200) {
                             alert(data.message);
 
-                            $('#chapterSelectSubject').val($('#chapterSelectSubjectFilter').val());
                             $('#chapterName').val('');
                             $('#chapterMeta').val('');
                             LoadListChapter(keyword, page);
@@ -459,8 +353,7 @@
                     }
                 })
             }
-            else {
-                //Use ajax update chapter
+            else { //Update chapter
                 $.ajax({
                     url: '/admin/chapter/UpdateChapter',
                     type: 'post',
@@ -475,11 +368,8 @@
                             alert(data.message);
 
                             $('#modalChapter').modal('hide');
-                            if ($('#chapterSelectSubjectFilter').val() == -1) {
-                                LoadListChapter(keyword, page);
-                            } else {
-                                LoadListChapterBySubject(page);
-                            }
+
+                            LoadListChapter(keyword, page);
                         }
                         else {
                             alert(data.message);
@@ -504,18 +394,26 @@
             if (keyword.length == 0) {
                 return;
             }
+
             page = 1;
-            $('#chapterSelectSubjectFilter').val(-1);
             LoadListChapter(keyword, page)
         })
 
-        //Reload list chapter input null
+        //Reload list chapter when search null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
                 LoadListChapter(keyword, page);
             }
+        })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+
+            LoadListChapter(keyword, page);
         })
     </script>
 }

@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách bài";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -17,7 +17,7 @@
     </div>
 
     <div class="form-group col-sm-3">
-        <select class="form-select" id="lessonSelectChapterFilter">
+        <select class="form-select" id="lessonSelectChapter">
             <option value='-1' selected>Chọn chương</option>
         </select>
     </div>
@@ -56,9 +56,6 @@
                     STT
                 </th>
                 <th>
-                    Chương
-                </th>
-                <th>
                     Bài
                 </th>
                 <th>
@@ -79,11 +76,6 @@
                 <h5 class="card-header" id="modalTitle"></h5>
                 <div class="card-body">
                     <input hidden id="lessonId" value="" />
-                    <div class="form-group">
-                        <label class="control-label">Chương</label>
-                        <select class="form-select" id="lessonSelectChapter">
-                        </select>
-                    </div>
                     <div class="form-group">
                         <label class="control-label">Tên bài</label>
                         <input type="text" class="form-control" id="lessonName" placeholder="Tên bài" />
@@ -111,67 +103,39 @@
 
         $(document).ready(function () {
             LoadListGrade();
-            LoadListSubject();
-            LoadListChapter();
-            LoadListLesson(keyword, page);
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
-
-            if ($('#lessonSelectChapterFilter').val() != -1) {
-                LoadListLessonByChapter(page);
-                return;
-            }
-
-            LoadListLesson(keyword, page);
-        })
-
-        //Load List Subject When Grade Change
+        //Load list subject when grade change
         $('#lessonSelectGrade').on('change', function () {
             $('#lessonSelectSubject').empty();
             $('#lessonSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
             $('#lessonSelectChapterFilter').empty();
             $('#lessonSelectChapterFilter').append("<option value='-1' selected>Chọn chương</option>");
+            $('#tBodyListLesson').empty();
 
-            if ($('#lessonSelectGrade').val() == -1) {
-                LoadListLesson(keyword, page);
-                LoadListChapter();
-            }
-
-            LoadListSubject();
+            LoadListSubject($('#lessonSelectGrade').val());
         });
 
-        //Load List Chapter When Subject Change
+        //Load list chapter when subject change
         $('#lessonSelectSubject').on('change', function () {
-            $('#lessonSelectChapterFilter').empty();
-            $('#lessonSelectChapterFilter').append("<option value='-1' selected>Chọn chương</option>");
+            $('#lessonSelectChapter').empty();
+            $('#lessonSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
+            $('#tBodyListLesson').empty();
 
-            if ($('#lessonSelectSubject').val() == -1) {
-                LoadListLesson(keyword, page);
-            }
-
-            LoadListChapter();
+            LoadListChapter($('#lessonSelectSubject').val());
         });
 
-        //Load List Lesson Select Chapter Change
-        $('#lessonSelectChapterFilter').on('change', function () {
+        //Load list lesson when chapter change
+        $('#lessonSelectChapter').on('change', function () {
             page = 1;
-            $("#search").val('');
-            if ($('#lessonSelectChapterFilter').val() == -1) {
-                LoadListLesson(keyword, page);
-                return;
-            }
-            LoadListLessonByChapter(page);
+            keyword = '';
+            LoadListLesson(keyword, page);
         });
 
-        //Load List Grade
+        //Load list grade
         function LoadListGrade() {
-            //use ajax to load list grade
             $.ajax({
-                url: "/admin/grade/GetAllGrade",
+                url: "/admin/lesson/GetListGrade",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
@@ -186,96 +150,67 @@
             })
         };
 
-        //Load List Subject
-        function LoadListSubject() {
-            //use ajax to load list subject
-            if ($('#chapterSelectGrade').val() != -1) {
-                $.ajax({
-                    url: "/admin/subject/GetListSubjectByGrade",
-                    type: "get",
-                    data: {
-                        id: $('#lessonSelectGrade').val()
-                    },
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#lessonSelectSubject').empty();
-                            $('#lessonSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.subjectName}</option>`;
-                                $('#lessonSelectSubject').append(option);
-                            })
-                        }
+        //Load list subject
+        function LoadListSubject(id) {
+            $.ajax({
+                url: "/admin/lesson/GetListSubject",
+                type: "get",
+                data: {
+                    gradeId: id
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#lessonSelectSubject').empty();
+                        $('#lessonSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.subjectName}</option>`;
+                            $('#lessonSelectSubject').append(option);
+                        })
                     }
-                })
-            }
-        };
+                }
+            })
+        }
 
-        //Load List Chapter
-        function LoadListChapter() {
-            //use ajax to load list chapter
-            if ($('#lessonSelectSubject').val() == -1 || $('#lessonSelectGrade').val() == -1) {
-                $.ajax({
-                    url: "/admin/chapter/GetAllChapter",
-                    type: "get",
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#lessonSelectChapter').empty();
-                            $('#lessonSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.chapterName}</option>`;
-                                $('#lessonSelectChapter').append(option);
-                            })
-                        }
+        //Load list chapter
+        function LoadListChapter(id) {
+            $.ajax({
+                url: "/admin/lesson/GetListChapter",
+                type: "get",
+                data: {
+                    subjectId: id
+                },
+                success: function (data) {
+                    if (data.code === 200) {
+                        $('#lessonSelectChapter').empty();
+                        $('#lessonSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
+                        $.each(data.data, function (index, item) {
+                            let option = `<option value=${item.id}>${item.chapterName}</option>`;
+                            $('#lessonSelectChapter').append(option);
+                        })
                     }
-                })
-            }
-            else {
-                $.ajax({
-                    url: "/admin/chapter/GetListChapterBySubjectFilter",
-                    type: "get",
-                    data: {
-                        id: $('#lessonSelectSubject').val()
-                    },
-                    success: function (data) {
-                        if (data.code === 200) {
-                            $('#lessonSelectChapterFilter').empty();
-                            $('#lessonSelectChapterFilter').append("<option value='-1' selected>Chọn chương</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.chapterName}</option>`;
-                                $('#lessonSelectChapterFilter').append(option);
-                            })
+                }
+            })
+        }
 
-                            $('#lessonSelectChapter').empty();
-                            $('#lessonSelectChapter').append("<option value='-1' selected>Chọn chương</option>");
-                            $.each(data.data, function (index, item) {
-                                let option = `<option value=${item.id}>${item.chapterName}</option>`;
-                                $('#lessonSelectChapter').append(option);
-                            })
-                        }
-                    }
-                })
-            }
-        };
-
-        //Load List Lesson
+        //Load list lesson
         function LoadListLesson(keyword, page) {
-            //use ajax to load list lesson
             $.ajax({
                 url: "/admin/lesson/GetListLesson",
                 type: "get",
                 data: {
+                    chapterId: $('#lessonSelectChapter').val(),
                     keyword,
                     page
                 },
                 success: function (data) {
+                    console.log(data)
                     if (data.code === 200) {
                         $('#tBodyListLesson').empty();
                         $.each(data.data, function (index, item) {
                             let tr = `<tr id=${item.id}>`;
                             tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-3">${item.chapterName}</td>`;
-                            tr += `<td class="col-sm-3">${item.lessonName}</td>`;
-                            tr += `<td class="col-sm-3">${item.meta}</td>`;
+                            tr += `<td class="col-sm-4">${item.lessonName}</td>`;
+                            tr += `<td class="col-sm-4">${item.meta}</td>`;
                             tr += '<td class="col-sm-2 text-end">';
                             tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
                             tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
@@ -285,6 +220,7 @@
 
                             $('#tBodyListLesson').append(tr);
                         })
+
                         if (data.pageSize > 1) {
                             $('#pagination').empty();
                             for (var i = 1; i <= data.pageSize; i++) {
@@ -302,198 +238,95 @@
             })
         };
 
-        //Load List Lesson By Chapter
-        function LoadListLessonByChapter(page) {
-            //use ajax to load list lesson
-            $.ajax({
-                url: "/admin/lesson/GetListLessonByChapter",
-                type: "get",
-                data: {
-                    id: $('#lessonSelectChapterFilter').val(),
-                    page
-                },
-                success: function (data) {
-                    console.log(data)
-                    if (data.code === 200) {
-                        $('#tBodyListLesson').empty();
-                        $.each(data.data, function (index, item) {
-                            let tr = `<tr id=${item.id}>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-3">${item.chapterName}</td>`;
-                            tr += `<td class="col-sm-3">${item.lessonName}</td>`;
-                            tr += `<td class="col-sm-3">${item.meta}</td>`;
-                            tr += '<td class="col-sm-2 text-end">';
-                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
-                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
-                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
-                            tr += "</td>";
-                            tr += "</tr>";
-
-                            $('#tBodyListLesson').append(tr);
-                        })
-                        if (data.pageSize > 1) {
-                            $('#pagination').empty();
-                            for (var i = 1; i <= data.pageSize; i++) {
-                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
-                                $('#pagination').append(li);
-                            }
-                            let li = $(`#pagination li#${page}`);
-                            $(li).addClass('active');
-                        }
-                        else {
-                            $('#pagination').empty();
-                        }
-                    }
-                }
-            })
-        };
-
-        //Function Load List Chapter Select Subject Change
-        function LoadListChapterBySubject(page) {
-            //use ajax to load list chapter
-            $.ajax({
-                url: "/admin/chapter/GetListChapterBySubject",
-                type: "get",
-                data: {
-                    id: $('#chapterSelectSubjectFilter').val(),
-                    page
-                },
-                success: function (data) {
-                    console.log(data)
-                    if (data.code === 200) {
-                        $('#tBodyListChapter').empty();
-                        $.each(data.data, function (index, item) {
-                            let tr = `<tr id=${item.id}>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-3">${item.subjectName}</td>`;
-                            tr += `<td class="col-sm-3">${item.chapterName}</td>`;
-                            tr += `<td class="col-sm-3">${item.meta}</td>`;
-                            tr += '<td class="col-sm-2 text-end">';
-                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
-                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
-                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
-                            tr += "</td>";
-                            tr += "</tr>";
-
-                            $('#tBodyListChapter').append(tr);
-                        })
-                        if (data.pageSize > 1) {
-                            $('#pagination').empty();
-                            for (var i = 1; i <= data.pageSize; i++) {
-                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
-                                $('#pagination').append(li);
-                            }
-                            let li = $(`#pagination li#${page}`);
-                            $(li).addClass('active');
-                        }
-                        else {
-                            $('#pagination').empty();
-                        }
-                    }
-                }
-            })
-        };
-
-        //Get Detail
-        $(document).on('click', "button[name='view']", function () {
-            let lessonId = $(this).closest('tr').attr('id');
-
-            $.ajax({
-                url: '/admin/lesson/GetDetail',
-                type: "get",
-                data: {
-                    id: lessonId
-                },
-                success: function (data) {
-                    if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Chi tiết bài");
-
-                        //set value input
-                        $('#lessonSelectChapter').val(data.data.idChapter);
-                        $('#lessonName').val(data.data.lessonName);
-                        $('#lessonMeta').val(data.data.meta);
-
-                        //readonly input
-                        $('#lessonName').prop('readonly', true);
-                        $('#lessonMeta').prop('readonly', true);
-
-                        //hidden button add
-                        $('#btnSubmit').hide();
-
-                        //show modal
-                        $('#modalLesson').modal('show');
-                    } else {
-                        alert(data.message);
-                    }
-                }
-            })
-        });
-
-        //Add Chapter
+        //Show modal add lesson
         $('#btnAdd').click(function () {
+            if ($('#lessonSelectChapter').val() == -1) {
+                alert('Vui lòng chọn chương!');
+                return;
+            }
+
             $('#modalTitle').text("Thêm bài");
 
             $('#lessonId').val('');
-            $('#lessonSelectChapter').val($('#lessonSelectChapterFilter').val());
             $('#lessonName').val('');
             $('#lessonMeta').val('');
 
             $('#lessonName').prop('readonly', false);
             $('#lessonMeta').prop('readonly', false);
 
-            //show button add
             $('#btnSubmit').text('Thêm');
             $('#btnSubmit').show();
 
-            //show modal
             $('#modalLesson').modal('show');
         });
 
-        //Update Chapter
-        $(document).on('click', "button[name='update']", function () {
+        //Show modal detail lesson
+        $(document).on('click', "button[name='view']", function () {
             let lessonId = $(this).closest('tr').attr('id');
 
             $.ajax({
-                url: '/admin/lesson/GetDetail',
+                url: '/admin/lesson/GetDetailLesson',
                 type: "get",
                 data: {
                     id: lessonId
                 },
                 success: function (data) {
                     if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Cập nhật thông tin bài");
+                        $('#modalTitle').text("Chi tiết bài");
 
-                        //set value input
-                        $('#lessonId').val(lessonId);
-                        $('#lessonSelectChapter').val(data.data.idChapter);
                         $('#lessonName').val(data.data.lessonName);
                         $('#lessonMeta').val(data.data.meta);
 
-                        $('#lessonName').prop('readonly', false);
-                        $('#lessonMeta').prop('readonly', false);
+                        $('#lessonName').prop('readonly', true);
+                        $('#lessonMeta').prop('readonly', true);
 
-                        //show button add
-                        $('#btnSubmit').text('Lưu');
-                        $('#btnSubmit').show();
+                        $('#btnSubmit').hide();
 
-                        //show modal
                         $('#modalLesson').modal('show');
                     } else {
                         alert(data.message);
                     }
                 }
             })
-
         });
 
-        //Delete Lesson
+        //Show modal update lesson
+        $(document).on('click', "button[name='update']", function () {
+            let lessonId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/lesson/GetDetailLesson',
+                type: "get",
+                data: {
+                    id: lessonId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#modalTitle').text("Cập nhật thông tin bài");
+
+                        $('#lessonId').val(lessonId);
+                        $('#lessonName').val(data.data.lessonName);
+                        $('#lessonMeta').val(data.data.meta);
+
+                        $('#lessonName').prop('readonly', false);
+                        $('#lessonMeta').prop('readonly', false);
+
+                        $('#btnSubmit').text('Cập nhật');
+                        $('#btnSubmit').show();
+
+                        $('#modalLesson').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Delete lesson
         $(document).on('click', "button[name='delete']", function () {
             let lessonId = $(this).closest('tr').attr('id');
 
             if (confirm("Bạn có chắc muốn xóa bài này?")) {
-                //Use ajax delete lesson
                 $.ajax({
                     url: '/admin/lesson/DeleteLesson',
                     type: "post",
@@ -503,13 +336,10 @@
                     success: function (data) {
                         if (data.code == 200) {
                             alert(data.message);
+
                             page = 1;
-                            if ($('#lessonSelectChapterFilter').val() != -1) {
-                                LoadListLessonByChapter(page);
-                            }
-                            else {
-                                LoadListLesson(keyword, page);
-                            }
+                            LoadListLesson(keyword, page);
+
                         } else {
                             alert(data.message);
                         }
@@ -531,8 +361,7 @@
                 return;
             }
 
-            if (lessonId.length == 0) {
-                //Use ajax add chapter
+            if (lessonId.length == 0) { //Add lesson
                 $.ajax({
                     url: '/admin/lesson/AddLesson',
                     type: 'post',
@@ -545,16 +374,10 @@
                         if (data.code == 200) {
                             alert(data.message);
 
-                            $('#lessonSelectChapter').val($('#lessonSelectChapterFilter').val());
                             $('#lessonName').val('');
                             $('#lessonMeta').val('');
 
-                            if ($('#lessonSelectChapterFilter').val() != -1) {
-                                LoadListLessonByChapter(page);
-                            }
-                            else {
-                                LoadListLesson(keyword, page);
-                            }
+                            LoadListLesson(keyword, page);
                         }
                         else {
                             alert(data.message);
@@ -562,8 +385,7 @@
                     }
                 })
             }
-            else {
-                //Use ajax update chapter
+            else { //Update lesson
                 $.ajax({
                     url: '/admin/lesson/UpdateLesson',
                     type: 'post',
@@ -577,13 +399,7 @@
                         if (data.code == 200) {
                             alert(data.message);
 
-                            $('#modalLesson').modal('hide');
-                            if ($('#lessonSelectChapterFilter').val() != -1) {
-                                LoadListLessonByChapter(page);
-                            }
-                            else {
-                                LoadListLesson(keyword, page);
-                            }
+                            LoadListLesson(keyword, page);
                         }
                         else {
                             alert(data.message);
@@ -593,7 +409,7 @@
             }
         })
 
-        //Convert chapter name to meta
+        //Convert lesson name to meta
         $('#lessonName').keyup(function () {
             let convertedString = $(this).val().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); //remove diacritics
             convertedString = convertedString.replace(/\s+/g, "-").toLowerCase(); //Add a hyphen between two words
@@ -609,21 +425,24 @@
                 return;
             }
             page = 1;
-            $('#lessonSelectGrade').val(-1);
-            $('#lessonSelectSubject').empty();
-            $('#lessonSelectSubject').append("<option value='-1' selected>Chọn môn học</option>");
-            $('#lessonSelectChapterFilter').empty();
-            $('#lessonSelectChapterFilter').append("<option value='-1' selected>Chọn chương</option>");
             LoadListLesson(keyword, page)
         })
 
-        //Reload list chapter input null
+        //Reload list lesson when search null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
                 LoadListLesson(keyword, page);
             }
+        })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+
+            LoadListLesson(keyword, page);
         })
     </script>
 }

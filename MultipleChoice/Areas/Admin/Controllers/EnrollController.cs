@@ -6,10 +6,16 @@ using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 namespace MultipleChoice.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    /*[Authorize]*/
+    [Authorize]
     public class EnrollController : Controller
     {
         private readonly MultipleChoiceContext _context;
+
+        private int GetNumber(string name)
+        {
+            string numberString = new string(name.Where(char.IsDigit).ToArray());
+            return int.Parse(numberString);
+        }
 
         public EnrollController(MultipleChoiceContext context)
         {
@@ -21,7 +27,58 @@ namespace MultipleChoice.Areas.Admin.Controllers
             return View();
         }
 
-        //Get List Enroll
+        //Get list grade
+        [HttpGet]
+        public JsonResult GetListGrade()
+        {
+            try
+            {
+                var listGrade = _context.Grades.Where(x => x.IsDelete != 1).AsEnumerable()
+                                .OrderBy(x => GetNumber(x.GradeName)).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách khối thành công!",
+                    data = listGrade
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách khối thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Get list Class
+        [HttpGet]
+        public JsonResult GetListClass(int id)
+        {
+            try
+            {
+                var listClass = _context.Classes.Where(x => x.IsDelete != 1 && x.IdGrade == id).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách lớp thành công!",
+                    data = listClass
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách lớp thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Get list enroll
         [HttpGet]
         public JsonResult GetListEnroll(int year, string keyword, int page)
         {
@@ -69,59 +126,10 @@ namespace MultipleChoice.Areas.Admin.Controllers
 
         }
 
-        //Get All Class
+
+        //Get list not enroll
         [HttpGet]
-        public JsonResult GetAllClass()
-        {
-            try
-            {
-                var listClasses = _context.Classes.Where(x => x.IsDelete != 1).ToList();
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách lớp thành công!",
-                    data = listClasses
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách lớp thất bại: " + ex.Message
-                });
-            }
-        }
-
-        //Get Detail
-        [HttpGet]
-        public JsonResult GetDetail(int id)
-        {
-            try
-            {
-                var _class = _context.Classes.SingleOrDefault(x => x.Id == id);
-
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy thông tin chi tiết của lớp thành công!",
-                    data = _class
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy thông tin chi tiết của lớp thất bại: " + ex.Message
-                });
-            }
-        }
-
-
-        //Get Student Not Enroll
-        [HttpGet]
-        public JsonResult GetStudentNotEnrollByClass(string keyword, int page)
+        public JsonResult GetListNotEnroll(string keyword, int page)
         {
             try
             {
@@ -201,67 +209,6 @@ namespace MultipleChoice.Areas.Admin.Controllers
                 {
                     code = 500,
                     message = "Nhập học thất bại: " + ex.Message
-                });
-            }
-        }
-
-        //Update Enroll
-        [HttpPost]
-        public JsonResult UpdateEnroll(int id, string className, string classMeta)
-        {
-            try
-            {
-                //Find class by id
-                var _class = _context.Classes.SingleOrDefault(x => x.Id == id);
-
-                //Set new value class
-                _class.ClassName = className;
-                _class.Meta = classMeta;
-
-                //Save data
-                _context.SaveChanges();
-
-                return Json(new
-                {
-                    code = 200,
-                    message = "Cập nhật lớp thành công!",
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Cập nhật lớp thất bại: " + ex.Message
-                });
-            }
-        }
-
-        //Delete Class
-        [HttpPost]
-        public JsonResult DeleteClass(int id)
-        {
-            try
-            {
-                //Find class by id
-                var _class = _context.Classes.SingleOrDefault(x => x.Id == id);
-                _class.IsDelete = 1;
-
-                //Save data
-                _context.SaveChanges();
-
-                return Json(new
-                {
-                    code = 200,
-                    message = "Xóa lớp thành công!",
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Xóa lớp thất bại: " + ex.Message
                 });
             }
         }

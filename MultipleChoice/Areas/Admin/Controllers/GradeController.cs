@@ -4,10 +4,16 @@ using MultipleChoice.Models;
 namespace MultipleChoice.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    /*[Authorize]*/
+    [Authorize]
     public class GradeController : Controller
     {
         private readonly MultipleChoiceContext _context;
+
+        private int GetNumber(string name)
+        {
+            string numberString = new string(name.Where(char.IsDigit).ToArray());
+            return int.Parse(numberString);
+        }
 
         public GradeController(MultipleChoiceContext context)
         {
@@ -19,60 +25,32 @@ namespace MultipleChoice.Areas.Admin.Controllers
             return View();
         }
 
-        //Get List Grade
+        //Get list grade
         [HttpGet]
         public JsonResult GetListGrade(string keyword, int page)
         {
             try
             {
-                var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listGradeFromDB = (from _grade in _context.Grades.Where(x => x.IsDelete != 1)
-                                       select new
-                                       {
-                                           Id = _grade.Id,
-                                           GradeName = _grade.GradeName,
-                                           Meta = _grade.Meta
-                                       }).ToList();
+                var settingsPage = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
+
+                var listGradeFromDB = _context.Grades.Where(x => x.IsDelete != 1).AsEnumerable()
+                                      .OrderBy(x => GetNumber(x.GradeName)).ToList();
 
                 if (keyword != null)
                 {
                     listGradeFromDB = listGradeFromDB.Where(x => x.GradeName.ToLower().Contains(keyword.ToLower())).ToList();
                 }
 
-                var pageSize = listGradeFromDB.Count % settingsPages == 0 ? listGradeFromDB.Count / settingsPages : listGradeFromDB.Count / settingsPages + 1;
-                var listClasses = listGradeFromDB.Skip((page - 1) * settingsPages)
-                                    .Take(settingsPages)
+                var pageSize = listGradeFromDB.Count % settingsPage == 0 ? listGradeFromDB.Count / settingsPage : listGradeFromDB.Count / settingsPage + 1;
+                var listGrade = listGradeFromDB.Skip((page - 1) * settingsPage)
+                                    .Take(settingsPage)
                                     .ToList();
+
                 return Json(new
                 {
                     code = 200,
                     message = "Lấy danh sách khối thành công!",
                     pageSize,
-                    data = listClasses
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách khối thất bại: " + ex.Message
-                });
-            }
-
-        }
-
-        //Get All Grade
-        [HttpGet]
-        public JsonResult GetAllGrade()
-        {
-            try
-            {
-                var listGrade = _context.Grades.Where(x => x.IsDelete != 1).ToList();
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách khối thành công!",
                     data = listGrade
                 });
             }
@@ -86,9 +64,9 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Get Detail
+        //Get detail grade
         [HttpGet]
-        public JsonResult GetDetail(int id)
+        public JsonResult GetDetailGrade(int id)
         {
             try
             {
@@ -97,7 +75,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
                 return Json(new
                 {
                     code = 200,
-                    message = "Lấy thông tin chi tiết của khối thành công!",
+                    message = "Lấy thông tin chi tiết khối thành công!",
                     data = _grade
                 });
             }
@@ -106,12 +84,12 @@ namespace MultipleChoice.Areas.Admin.Controllers
                 return Json(new
                 {
                     code = 500,
-                    message = "Lấy thông tin chi tiết của khối thất bại: " + ex.Message
+                    message = "Lấy thông tin chi tiết khối thất bại: " + ex.Message
                 });
             }
         }
 
-        //Add Grade
+        //Add grade
         [HttpPost]
         public JsonResult AddGrade(string gradeName, string gradeMeta)
         {
@@ -140,21 +118,29 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Update Grade
+        //Update grade
         [HttpPost]
         public JsonResult UpdateGrade(int id, string gradeName, string gradeMeta)
         {
             try
             {
-                //Find grade by id
                 var _grade = _context.Grades.SingleOrDefault(x => x.Id == id);
 
-                //Set new value class
-                _grade.GradeName = gradeName;
-                _grade.Meta = gradeMeta;
+                if (_grade != null)
+                {
+                    _grade.GradeName = gradeName;
+                    _grade.Meta = gradeMeta;
 
-                //Save data
-                _context.SaveChanges();
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy khối!",
+                    });
+                }
 
                 return Json(new
                 {
@@ -172,18 +158,27 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Delete Grade
+        //Delete grade
         [HttpPost]
         public JsonResult DeleteGrade(int id)
         {
             try
             {
-                //Find class by id
                 var _grade = _context.Grades.SingleOrDefault(x => x.Id == id);
-                _grade.IsDelete = 1;
 
-                //Save data
-                _context.SaveChanges();
+                if (_grade != null)
+                {
+                    _grade.IsDelete = 1;
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy khối!",
+                    });
+                }
 
                 return Json(new
                 {
@@ -201,5 +196,4 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
     }
-
 }

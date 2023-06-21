@@ -5,7 +5,7 @@ using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 namespace MultipleChoice.Areas.TeacherArea.Controllers
 {
     [Area("TeacherArea")]
-    //[Authorize]
+    [Authorize]
     public class QuestionController : Controller
     {
         private readonly MultipleChoiceContext _context;
@@ -26,13 +26,22 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             return View();
         }
 
-        //Get All Grade
+        //Get list grade
         [HttpGet]
-        public JsonResult GetAllGrade()
+        public JsonResult GetListGrade()
         {
             try
             {
-                var listGrade = _context.Grades.Where(x => x.IsDelete != 1).ToList();
+                var _idTeacher = HttpContext.Session.GetInt32("teacher");
+                var listGrade = (from _teaching in _context.Teachings.Where(x => x.IdTeacher == _idTeacher && x.StartingDate <= DateTime.Now && x.EndingDate >= DateTime.Now)
+                                 join _subject in _context.Subjects.Where(x => x.IsDelete != 1) on _teaching.IdSubject equals _subject.Id
+                                 join _grade in _context.Grades.Where(x => x.IsDelete != 1) on _subject.IdGrade equals _grade.Id
+                                 select new
+                                 {
+                                     Id = _grade.Id,
+                                     GradeName = _grade.GradeName,
+                                 }).AsEnumerable().OrderBy(x => GetNumber(x.GradeName)).ToList();
+
                 return Json(new
                 {
                     code = 200,
@@ -50,13 +59,15 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             }
         }
 
-        //Get List Subject By Grade
+        //Get list subject
         [HttpGet]
-        public JsonResult GetListSubjectByGrade(int id)
+        public JsonResult GetListSubject(int id)
         {
             try
             {
-                var listSubject = (from _subject in _context.Subjects.Where(x => x.IdGrade == id && x.IsDelete != 1)
+                var _idTeacher = HttpContext.Session.GetInt32("teacher");
+                var listSubject = (from _teaching in _context.Teachings.Where(x => x.IdTeacher == _idTeacher && x.StartingDate <= DateTime.Now && x.EndingDate >= DateTime.Now)
+                                   join _subject in _context.Subjects.Where(x => x.IdGrade == id && x.IsDelete != 1) on _teaching.IdSubject equals _subject.Id
                                    select new
                                    {
                                        Id = _subject.Id,
@@ -84,7 +95,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
 
         //Get List Chapter By Subject
         [HttpGet]
-        public JsonResult GetListChapterBySubject(int id)
+        public JsonResult GetListChapter(int id)
         {
             try
             {
@@ -114,7 +125,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
 
         //Get List Lesson By Chapter
         [HttpGet]
-        public JsonResult GetListLessonByChapter(int id)
+        public JsonResult GetListLesson(int id)
         {
             try
             {
@@ -196,12 +207,45 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
 
         //Get List Question
         [HttpGet]
-        public JsonResult GetListQuestion(string keyword, int page)
+        public JsonResult GetListQuestion(int subjectId, string keyword, int page)
         {
             try
             {
+                var _idTeacher = HttpContext.Session.GetInt32("teacher");
+                var _checkLeader = _context.Subjects.SingleOrDefault(x => x.Id == subjectId);
+                var _isLeader = false;
+                if (_checkLeader != null && _checkLeader.IdLeader == _idTeacher)
+                {
+                    _isLeader = true;
+                }
+
                 var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listQuestionFromDB = _context.Questions.Where(x => x.IsDelete != 1).OrderByDescending(x => x.Id).ToList();
+                var listQuestionFromDB = (from _question in _context.Questions.Where(x => x.IsDelete != 1).OrderByDescending(x => x.Id)
+                                          join _teacher in _context.Teachers on _question.Author equals _teacher.Id
+                                          join _editor in _context.Teachers on _question.Editor equals _editor.Id into editorJoin
+                                          from _editor in editorJoin.DefaultIfEmpty()
+                                          join _approver in _context.Teachers on _question.Approver equals _approver.Id into approverJoin
+                                          from _approver in approverJoin.DefaultIfEmpty()
+                                          join _lesson in _context.Lessons on _question.IdLesson equals _lesson.Id
+                                          join _chapter in _context.Chapters on _lesson.IdChapter equals _chapter.Id
+                                          join _subject in _context.Subjects on _chapter.IdSubject equals _subject.Id
+                                          where (_subject.Id == subjectId)
+                                          select new
+                                          {
+                                              Id = _question.Id,
+                                              QuestionContent = _question.QuestionContent,
+                                              Author = _teacher.TeacherName,
+                                              CreationDate = _question.CreationDate,
+                                              Editor = _editor.TeacherName,
+                                              EditingDate = _question.EditingDate,
+                                              IsApprove = _question.IsApprove,
+                                              Approver = _approver.TeacherName,
+                                              AnswerA = _question.AnswerA,
+                                              AnswerB = _question.AnswerB,
+                                              AnswerC = _question.AnswerC,
+                                              AnswerD = _question.AnswerD,
+                                              Note = _question.Note,
+                                          }).ToList();
 
                 if (keyword != null)
                 {
@@ -216,53 +260,12 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
 
                 var pageSize = listQuestionFromDB.Count % settingsPages == 0 ? listQuestionFromDB.Count / settingsPages : listQuestionFromDB.Count / settingsPages + 1;
                 var listQuestion = listQuestionFromDB.Skip((page - 1) * settingsPages)
-                                   .Take(settingsPages)
-                                   .ToList();
-
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách môn học thành công!",
-                    pageSize,
-                    data = listQuestion
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách môn học thất bại: " + ex.Message
-                });
-            }
-
-        }
-
-        //Get List Subject
-        [HttpGet]
-        public JsonResult GetListQuestionBySubject(int id, int page)
-        {
-            try
-            {
-                var settingsPages = int.Parse(_context.Settings.SingleOrDefault(x => x.Keyword == "LinesPerPage").Value);
-                var listQuestionFromDB = (from _question in _context.Questions.OrderByDescending(x => x.Id)
-                                          join _lesson in _context.Lessons on _question.IdLesson equals _lesson.Id
-                                          join _chapter in _context.Chapters on _lesson.IdChapter equals _chapter.Id
-                                          join _subject in _context.Subjects on _chapter.IdSubject equals _subject.Id
-                                          where (_question.IsDelete != 1 && _subject.Id == id)
-                                          select new
-                                          {
-                                              Id = _question.Id,
-                                              QuestionContent = _question.QuestionContent,
-                                          }).ToList();
-
-                var pageSize = listQuestionFromDB.Count % settingsPages == 0 ? listQuestionFromDB.Count / settingsPages : listQuestionFromDB.Count / settingsPages + 1;
-                var listQuestion = listQuestionFromDB.Skip((page - 1) * settingsPages)
                                     .Take(settingsPages).ToList();
                 return Json(new
                 {
                     code = 200,
                     message = "Lấy danh sách câu hỏi thành công!",
+                    isLeader = _isLeader,
                     pageSize,
                     data = listQuestion
                 });
@@ -277,9 +280,52 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             }
         }
 
-        //Get Detail
+        //Get list question not appove
         [HttpGet]
-        public JsonResult GetDetail(int id)
+        public JsonResult GetListQuestionNotAppoveBySubject(int id)
+        {
+            try
+            {
+                var listQuestion = (from _question in _context.Questions.Where(x => x.IsDelete != 1 && x.IsApprove != 1).OrderByDescending(x => x.Id)
+                                    join _lesson in _context.Lessons on _question.IdLesson equals _lesson.Id
+                                    join _chapter in _context.Chapters on _lesson.IdChapter equals _chapter.Id
+                                    join _subject in _context.Subjects on _chapter.IdSubject equals _subject.Id
+                                    join _answer in _context.Answers on _question.IdAnswer equals _answer.Id
+                                    join _level in _context.Levels on _question.IdLevel equals _level.Id
+                                    where (_subject.Id == id)
+                                    select new
+                                    {
+                                        Id = _question.Id,
+                                        QuestionContent = _question.QuestionContent,
+                                        AnswerA = _question.AnswerA,
+                                        AnswerB = _question.AnswerB,
+                                        AnswerC = _question.AnswerC,
+                                        AnswerD = _question.AnswerD,
+                                        Answer = _answer.AnswerLabel,
+                                        Level = _level.LevelName,
+                                        Note = _question.Note,
+                                    }).ToList();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Lấy danh sách câu hỏi thành công!",
+                    data = listQuestion
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Lấy danh sách câu hỏi thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Get detail question
+        [HttpGet]
+        public JsonResult GetDetailQuestion(int id)
         {
             try
             {
@@ -322,7 +368,37 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             }
         }
 
-        //Add Question
+        //Approve question
+        [HttpPost]
+        public JsonResult ApproveQuestion(int id)
+        {
+            try
+            {
+                var _idTeacher = HttpContext.Session.GetInt32("teacher");
+
+                var _question = _context.Questions.SingleOrDefault(x => x.Id == id);
+                _question.IsApprove = 1;
+                _question.Approver = _idTeacher;
+
+                _context.SaveChanges();
+
+                return Json(new
+                {
+                    code = 200,
+                    message = "Phê duyệt câu hỏi thành công!"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    code = 500,
+                    message = "Phê duyệt câu hỏi thất bại: " + ex.Message
+                });
+            }
+        }
+
+        //Add question
         [HttpPost]
         public JsonResult AddQuestion(string questionContent, string answerA, string answerB, string answerC, string answerD, int answer, int lesson, int level, string note)
         {
@@ -362,7 +438,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             }
         }
 
-        //Update Question
+        //Update question
         [HttpPost]
         public JsonResult UpdateQuestion(int id, string questionContent, string answerA, string answerB, string answerC, string answerD, int answer, int lesson, int level, string note)
         {
@@ -405,7 +481,7 @@ namespace MultipleChoice.Areas.TeacherArea.Controllers
             }
         }
 
-        //Delete Question
+        //Delete question
         [HttpPost]
         public JsonResult DeleteQuestion(int id)
         {

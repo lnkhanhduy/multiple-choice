@@ -3,7 +3,7 @@
 namespace MultipleChoice.Areas.TeacherArea.Controllers
 {
     [Area("TeacherArea")]
-    //[Authorize]
+    [Authorize]
     public class TeacherHomeController : Controller
     {
         public IActionResult Index()

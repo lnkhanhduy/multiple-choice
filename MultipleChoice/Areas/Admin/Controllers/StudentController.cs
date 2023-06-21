@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MultipleChoice.Models;
+using System.Net;
 
 namespace MultipleChoice.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    /*[Authorize]*/
+    [Authorize]
     public class StudentController : Controller
     {
         private readonly MultipleChoiceContext _context;
@@ -19,7 +20,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
             return View();
         }
 
-        //Get List Student
+        //Get list student
         [HttpGet]
         public JsonResult GetListStudent(string keyword, int page)
         {
@@ -35,7 +36,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
                                              Phone = _student.Phone,
                                              Email = _student.Email,
                                              Address = _student.Address,
-                                         }).ToList();
+                                         }).OrderBy(x => x.StudentName).ToList();
 
                 if (keyword != null)
                 {
@@ -51,6 +52,7 @@ namespace MultipleChoice.Areas.Admin.Controllers
                 var listStudent = listStudentFromDB.Skip((page - 1) * settingsPages)
                                     .Take(settingsPages)
                                     .ToList();
+
                 return Json(new
                 {
                     code = 200,
@@ -67,36 +69,11 @@ namespace MultipleChoice.Areas.Admin.Controllers
                     message = "Lấy danh sách học sinh thất bại: " + ex.Message
                 });
             }
-
         }
 
-        //Get All Student
+        //Get detail student
         [HttpGet]
-        public JsonResult GetAllStudent()
-        {
-            try
-            {
-                var listStudent = _context.Students.Where(x => x.IsDelete != 1).ToList();
-                return Json(new
-                {
-                    code = 200,
-                    message = "Lấy danh sách học sinh thành công!",
-                    data = listStudent
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    code = 500,
-                    message = "Lấy danh sách học sinh thất bại: " + ex.Message
-                });
-            }
-        }
-
-        //Get Detail
-        [HttpGet]
-        public JsonResult GetDetail(string id)
+        public JsonResult GetDetailStudent(string id)
         {
             try
             {
@@ -119,13 +96,14 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Add Student
+        //Add student
         [HttpPost]
         public JsonResult AddStudent(string studentId, string password, string studentName, DateTime birthday, string phone, string email, string address)
         {
             try
             {
                 var _checkStudent = _context.Students.FirstOrDefault(x => x.IdStudent == studentId);
+
                 if (_checkStudent != null && _checkStudent.IdStudent == studentId)
                 {
                     return Json(new
@@ -137,8 +115,9 @@ namespace MultipleChoice.Areas.Admin.Controllers
                 }
 
                 var _student = new Student();
+
                 _student.IdStudent = studentId;
-                _student.Password = password;
+                _student.Password = BCrypt.Net.BCrypt.HashPassword(password);
                 _student.StudentName = studentName;
                 _student.Birthday = birthday;
                 _student.Phone = phone;
@@ -164,25 +143,33 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Update Student
+        //Update student
         [HttpPost]
         public JsonResult UpdateStudent(string studentId, string password, string studentName, DateTime birthday, string phone, string email, string address)
         {
             try
             {
-                //Find student by id
                 var _student = _context.Students.SingleOrDefault(x => x.IdStudent == studentId);
 
-                //Set new value teacher
-                _student.Password = password;
-                _student.StudentName = studentName;
-                _student.Birthday = birthday;
-                _student.Phone = phone;
-                _student.Email = email;
-                _student.Address = address;
+                if (_student != null)
+                {
+                    _student.Password = BCrypt.Net.BCrypt.HashPassword(password);
+                    _student.StudentName = studentName;
+                    _student.Birthday = birthday;
+                    _student.Phone = phone;
+                    _student.Email = email;
+                    _student.Address = address;
 
-                //Save data
-                _context.SaveChanges();
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy học sinh!",
+                    });
+                }
 
                 return Json(new
                 {
@@ -200,18 +187,28 @@ namespace MultipleChoice.Areas.Admin.Controllers
             }
         }
 
-        //Delete Student
+        //Delete student
         [HttpPost]
         public JsonResult DeleteStudent(string id)
         {
             try
             {
-                //Find teacher by id
                 var _student = _context.Students.SingleOrDefault(x => x.IdStudent == id);
-                _student.IsDelete = 1;
 
-                //Save data
-                _context.SaveChanges();
+                if (_student != null)
+                {
+                    _student.IsDelete = 1;
+
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        code = 500,
+                        message = "Không tìm thấy học sinh!",
+                    });
+                }
 
                 return Json(new
                 {

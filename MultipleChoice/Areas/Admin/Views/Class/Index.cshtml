@@ -1,9 +1,15 @@
 ﻿@{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách lớp";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
 <div class="row">
+    <div class="form-group col-sm-2">
+        <select class="form-select" id="selectGradeId">
+            <option value='-1' selected>Chọn khối</option>
+        </select>
+    </div>
+
     <div class="col-sm-3 mb-2">
         <button class="btn btn-success" id="btnAdd">
             <i class="fa-solid fa-plus"></i>
@@ -11,7 +17,7 @@
         </button>
     </div>
 
-    <div class="col-sm-3 offset-sm-6 mb-2">
+    <div class="col-sm-3 offset-sm-4 mb-2">
         <form id="formSearch">
             <div class="input-group">
                 <input type="search" id="search" class="form-control" placeholder="Tìm kiếm" />
@@ -63,7 +69,7 @@
                     <input hidden id="classId" value="" />
                     <div class="form-group">
                         <label class="control-label">Khối</label>
-                        <select class="form-select" id="classSelectGrade">
+                        <select class="form-select" id="gradeId">
                         </select>
                     </div>
                     <div class="form-group">
@@ -88,185 +94,182 @@
 
 @section Scripts{
     <script>
-        var keyword = '';
-        var page = 1;
+        let keyword = '';
+        let page = 1;
 
         $(document).ready(function () {
             LoadListGrade();
-            LoadListClass(keyword, page);
         });
 
-        //Click page of pagination
-        $('#pagination').on('click', 'li', function (e) {
-            e.preventDefault();
-            page = $(this).text();
+        //Load list class when grade change
+        $('#selectGradeId').on('change', function () {
             LoadListClass(keyword, page);
         })
 
-        //Load List Grade
+        $('#gradeId').on('change', function () {
+            $('#selectGradeId').val($('#gradeId').val());
+            LoadListClass(keyword, page);
+        })
+
+        //Load list grade
         function LoadListGrade() {
-            //use ajax to load list teacher
             $.ajax({
-                url: "/admin/grade/GetAllGrade",
+                url: "/admin/class/GetListGrade",
                 type: "get",
                 success: function (data) {
                     if (data.code === 200) {
-                        $('#classSelectGrade').empty();
-                        $('#classSelectGrade').append("<option value='-1' selected>Chọn khối</option>");
+                        $('#selectGradeId').empty();
+                        $('#selectGradeId').append("<option value='-1' selected>Chọn khối</option>");
                         $.each(data.data, function (index, item) {
                             let option = `<option value=${item.id}>${item.gradeName}</option>`;
-                            $('#classSelectGrade').append(option);
+                            $('#selectGradeId').append(option);
                         })
-                    }
-                }
-            })
-        };
 
-        //Load List Class
-        function LoadListClass(keyword, page) {
-            //use ajax to load list class
-            $.ajax({
-                url: "/admin/class/GetListClass",
-                type: "get",
-                data: {
-                    keyword,
-                    page
-                },
-                success: function (data) {
-                    if (data.code === 200) {
-                        $('#tBodyListClass').empty();
+                        $('#gradeId').empty();
+                        $('#gradeId').append("<option value='-1' selected>Chọn khối</option>");
                         $.each(data.data, function (index, item) {
-                            let tr = `<tr id=${item.id}>`;
-                            tr += `<td class="col-sm-1">${index + 1}</td>`;
-                            tr += `<td class="col-sm-3">${item.gradeName}</td>`;
-                            tr += `<td class="col-sm-3">${item.className}</td>`;
-                            tr += `<td class="col-sm-3">${item.meta}</td>`;
-                            tr += '<td class="col-sm-2 text-end">';
-                            tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
-                            tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
-                            tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
-                            tr += "</td>";
-                            tr += "</tr>";
-
-                            $('#tBodyListClass').append(tr);
+                            let option = `<option value=${item.id}>${item.gradeName}</option>`;
+                            $('#gradeId').append(option);
                         })
-                        if (data.pageSize > 1) {
-                            $('#pagination').empty();
-                            for (var i = 1; i <= data.pageSize; i++) {
-                                let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
-                                $('#pagination').append(li);
-                            }
-                            let li = $(`#pagination li#${page}`);
-                            $(li).addClass('active');
-                        }
-                        else {
-                            $('#pagination').empty();
-                        }
                     }
                 }
             })
         };
 
-        //Get Detail
-        $(document).on('click', "button[name='view']", function () {
-            let classId = $(this).closest('tr').attr('id');
+        //Load list class
+        function LoadListClass(keyword, page) {
+            if ($('#selectGradeId').val() != -1) {
+                $.ajax({
+                    url: "/admin/class/GetListClass",
+                    type: "get",
+                    data: {
+                        gradeId: $('#selectGradeId').val(),
+                        keyword,
+                        page
+                    },
+                    success: function (data) {
+                        if (data.code === 200) {
+                            $('#tBodyListClass').empty();
+                            $.each(data.data, function (index, item) {
+                                let tr = `<tr id=${item.id}>`;
+                                tr += `<td class="col-sm-1">${index + 1}</td>`;
+                                tr += `<td class="col-sm-3">${item.gradeName}</td>`;
+                                tr += `<td class="col-sm-3">${item.className}</td>`;
+                                tr += `<td class="col-sm-3">${item.meta}</td>`;
+                                tr += '<td class="col-sm-2 text-end">';
+                                tr += '<button class="btn btn-info btn-sm" name="view"><i class="fa-solid fa-circle-info"></i></button> | ';
+                                tr += '<button class="btn btn-warning btn-sm" name="update"><i class="fa-solid fa-pen-to-square"></i></button> | ';
+                                tr += '<button class="btn btn-danger btn-sm" name="delete"><i class="fa-solid fa-trash-can"></i></button>';
+                                tr += "</td>";
+                                tr += "</tr>";
 
-            $.ajax({
-                url: '/admin/class/GetDetail',
-                type: "get",
-                data: {
-                    id: classId
-                },
-                success: function (data) {
-                    if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Chi tiết lớp");
-
-                        //set value input
-                        $('#classSelectGrade').val(data.data.idGrade);
-                        $('#className').val(data.data.className);
-                        $('#classMeta').val(data.data.meta);
-
-                        //readonly input
-                        $('#className').prop('readonly', true);
-                        $('#classMeta').prop('readonly', true);
-
-                        //hidden button add
-                        $('#btnSubmit').hide();
-
-                        //show modal
-                        $('#modalClass').modal('show');
-                    } else {
-                        alert(data.message);
+                                $('#tBodyListClass').append(tr);
+                            })
+                            if (data.pageSize > 1) {
+                                $('#pagination').empty();
+                                for (var i = 1; i <= data.pageSize; i++) {
+                                    let li = `<li class="page-item" id=${i}><a class="page-link" href="#">${i}</a></li>`;
+                                    $('#pagination').append(li);
+                                }
+                                let li = $(`#pagination li#${page}`);
+                                $(li).addClass('active');
+                            }
+                            else {
+                                $('#pagination').empty();
+                            }
+                        }
                     }
-                }
-            })
-        });
+                })
+            }
+        };
 
-        //Add Class
+        //Show modal add class
         $('#btnAdd').click(function () {
             $('#modalTitle').text("Thêm lớp");
 
             $('#classId').val('');
-            $('#classSelectGrade').val(-1);
+            $('#gradeId').val($('#selectGradeId').val());
             $('#className').val('');
             $('#classMeta').val('');
 
             $('#className').prop('readonly', false);
             $('#classMeta').prop('readonly', false);
 
-            //show button add
             $('#btnSubmit').text('Thêm');
             $('#btnSubmit').show();
 
-            //show modal
             $('#modalClass').modal('show');
         });
 
-        //Update Class
-        $(document).on('click', "button[name='update']", function () {
+        //Show modal detail class
+        $(document).on('click', "button[name='view']", function () {
             let classId = $(this).closest('tr').attr('id');
 
             $.ajax({
-                url: '/admin/class/GetDetail',
+                url: '/admin/class/GetDetailClass',
                 type: "get",
                 data: {
                     id: classId
                 },
                 success: function (data) {
                     if (data.code == 200) {
-                        //set title
-                        $('#modalTitle').text("Cập nhật thông tin lớp");
+                        $('#modalTitle').text("Chi tiết lớp");
 
-                        //set value input
-                        $('#classId').val(classId);
-                        $('#classSelectGrade').val(data.data.idGrade);
+                        $('#gradeId').val(data.data.idGrade);
                         $('#className').val(data.data.className);
                         $('#classMeta').val(data.data.meta);
 
-                        $('#className').prop('readonly', false);
-                        $('#classMeta').prop('readonly', false);
+                        $('#className').prop('readonly', true);
+                        $('#classMeta').prop('readonly', true);
 
-                        //show button add
-                        $('#btnSubmit').text('Lưu');
-                        $('#btnSubmit').show();
+                        $('#btnSubmit').hide();
 
-                        //show modal
                         $('#modalClass').modal('show');
                     } else {
                         alert(data.message);
                     }
                 }
             })
-
         });
 
-        //Delete Class
+        //Show modal update class
+        $(document).on('click', "button[name='update']", function () {
+            let classId = $(this).closest('tr').attr('id');
+
+            $.ajax({
+                url: '/admin/class/GetDetailClass',
+                type: "get",
+                data: {
+                    id: classId
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#modalTitle').text("Cập nhật thông tin lớp");
+
+                        $('#classId').val(classId);
+                        $('#gradeId').val(data.data.idGrade);
+                        $('#className').val(data.data.className);
+                        $('#classMeta').val(data.data.meta);
+
+                        $('#className').prop('readonly', false);
+                        $('#classMeta').prop('readonly', false);
+
+                        $('#btnSubmit').text('Cập nhật');
+                        $('#btnSubmit').show();
+
+                        $('#modalClass').modal('show');
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            })
+        });
+
+        //Delete class
         $(document).on('click', "button[name='delete']", function () {
             let classId = $(this).closest('tr').attr('id');
 
-            if (confirm("Bạn có chắc muốn xóa lớp học này?")) {
-                //Use ajax delete class
+            if (confirm("Bạn có chắc muốn xóa lớp này?")) {
                 $.ajax({
                     url: '/admin/class/DeleteClass',
                     type: "post",
@@ -276,6 +279,7 @@
                     success: function (data) {
                         if (data.code == 200) {
                             alert(data.message);
+                            page = 1;
                             LoadListClass(keyword, page);
                         } else {
                             alert(data.message);
@@ -283,13 +287,12 @@
                     }
                 })
             }
-
         });
 
-        //Submit Modal
+        //Submit modal
         $('#btnSubmit').click(function () {
             let classId = $('#classId').val();
-            let gradeId = $('#classSelectGrade').val();
+            let gradeId = $('#gradeId').val();
             let className = $('#className').val().trim();
             let classMeta = $('#classMeta').val().trim();
 
@@ -298,9 +301,7 @@
                 return;
             }
 
-
-            if (classId.length == 0) {
-                //Use ajax add class
+            if (classId.length == 0) { //Add class
                 $.ajax({
                     url: '/admin/class/AddClass',
                     type: 'post',
@@ -313,7 +314,6 @@
                         if (data.code == 200) {
                             alert(data.message);
 
-                            $('#classSelectGrade').val(-1);
                             $('#className').val('');
                             $('#classMeta').val('');
                             LoadListClass(keyword, page);
@@ -324,8 +324,7 @@
                     }
                 })
             }
-            else {
-                //Use ajax update class
+            else { //Update class
                 $.ajax({
                     url: '/admin/class/UpdateClass',
                     type: 'post',
@@ -340,6 +339,8 @@
                             alert(data.message);
 
                             $('#modalClass').modal('hide');
+
+                            page = 1;
                             LoadListClass(keyword, page);
                         }
                         else {
@@ -350,13 +351,6 @@
             }
         })
 
-        //Convert class name to meta
-        $('#className').keyup(function () {
-            let convertedString = $(this).val().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); //remove diacritics
-            convertedString = convertedString.replace(/\s+/g, "-").toLowerCase(); //Add a hyphen between two words
-            $('#classMeta').val(convertedString)
-        })
-
         //Search
         $('#formSearch').submit(function (e) {
             e.preventDefault();
@@ -365,17 +359,32 @@
             if (keyword.length == 0) {
                 return;
             }
+
             page = 1;
             LoadListClass(keyword, page)
         })
 
-        //Reload list class input null
+        //Reload list class when search null
         $('#search').keyup(function () {
-            if ($("#search").val().length < 1) {
+            if ($("#search").val().length == 0) {
                 keyword = '';
                 page = 1;
                 LoadListClass(keyword, page);
             }
+        })
+
+        //Click page of pagination
+        $('#pagination').on('click', 'li', function (e) {
+            e.preventDefault();
+            page = $(this).text();
+            LoadListClass(keyword, page);
+        })
+
+        //Convert class name to meta
+        $('#className').keyup(function () {
+            let convertedString = $(this).val().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); //remove diacritics
+            convertedString = convertedString.replace(/\s+/g, "-").toLowerCase(); //Add a hyphen between two words
+            $('#classMeta').val(convertedString)
         })
     </script>
 }
